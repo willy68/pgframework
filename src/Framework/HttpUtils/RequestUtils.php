@@ -43,6 +43,9 @@ class RequestUtils
     {
         $accept = explode(',', $request->getHeaderLine('Accept'));
         $format = 'json';
+        if (in_array('application/json', $accept) || in_array('application/json;charset=utf8', $accept)) {
+            $format = 'json';
+        }
         if (in_array('text/html', $accept) || in_array('application/xhtml+xml', $accept)) {
             $format = 'html';
         }

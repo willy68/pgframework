@@ -49,7 +49,7 @@ class ApiOptionsMiddleware implements MiddlewareInterface
             'Access-Control-Allow-Methods' => $result->getAllowedMethods(),
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Credentials' => 'true',
-            'Content-Type' => 'application/json, application/*+json; charset=UTF-8'
+            'Content-Type' => 'application/json,application/*+json;charset=UTF-8'
         ]);
     }
 }
