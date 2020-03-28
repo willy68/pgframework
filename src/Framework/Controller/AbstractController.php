@@ -32,7 +32,7 @@ class AbstractController
      *
      * @param ServerRequestInterface $request
      * @param array $options
-     * @param array|null $filter
+     * @param array|null $filter default to ['limit', 'offset', 'order', 'include']
      * @return array
      */
     protected function getQueryOption(ServerRequestInterface $request, array $options, ?array $filter = []): array
