@@ -4,9 +4,7 @@
  * Exemple
  */
 
-use Framework\ActiveRecord\ActiveRecordFactory;
 use Psr\Container\ContainerInterface;
-use function DI\factory;
 
 return [
     'database.sgdb' => 'mysql',
