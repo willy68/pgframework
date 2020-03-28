@@ -6,7 +6,6 @@ use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use Twig\Loader\FilesystemLoader;
 
 /**
  * Undocumented class
@@ -40,7 +39,9 @@ class TwigRenderer implements RendererInterface
      */
     public function addPath(string $namespace, string $path = null)
     {
-        $this->twig->getLoader()->addPath($path, $namespace);
+        /** @var $loader \Twig\Loader\LoaderInterface */
+        $loader = $this->twig->getLoader();
+        $loader->addPath($path, $namespace);
     }
 
     /**
@@ -72,11 +73,11 @@ class TwigRenderer implements RendererInterface
     }
 
     /**
-     * Get undocumented variable
+     * Get twig
      *
      * @return  Environment
      */
-    public function getTwig()
+    public function getTwig(): Environment
     {
         return $this->twig;
     }

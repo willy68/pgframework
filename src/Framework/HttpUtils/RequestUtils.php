@@ -32,4 +32,20 @@ class RequestUtils
         }
         return $request->getParsedBody();
     }
+
+    /**
+     * 
+     *
+     * @param ServerRequestInterface $request
+     * @return string
+     */
+    public static function getAcceptFormat(ServerRequestInterface $request): string
+    {
+        $accept = explode(',', $request->getHeaderLine('Accept'));
+        $format = 'json';
+        if (in_array('text/html', $accept) || in_array('application/xhtml+xml', $accept)) {
+            $format = 'html';
+        }
+        return $format;
+    }
 }
