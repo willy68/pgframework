@@ -39,13 +39,13 @@ class ApiOptionsMiddleware implements MiddlewareInterface
         return new Response(200, [
             'Access-Control-Allow-Headers' =>
                 'X-CSRF-TOKEN,' .
-                ' X-Requested-With,' .
-                ' Content-Type,' .
-                ' Origin,' .
-                ' Authorization,' .
-                ' Accept,' .
-                ' Client-Security-Token,' .
-                ' User-Agent',
+                'X-Requested-With,' .
+                'Content-Type,' .
+                'Origin,' .
+                'Authorization,' .
+                'Accept,' .
+                'Client-Security-Token,' .
+                'User-Agent',
             'Access-Control-Allow-Methods' => $result->getAllowedMethods(),
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Credentials' => 'true',
