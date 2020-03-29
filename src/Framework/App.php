@@ -45,8 +45,8 @@ class App implements RequestHandlerInterface
      */
     public function __construct(array $config)
     {
-        $this->config[] = dirname(__DIR__ . '/config/config.php');
-        \array_merge($this->config, $config);
+        $this->config[] = dirname(__DIR__ ) . '/config/config.php';
+        $this->config = \array_merge($this->config, $config);
     }
 
     /**

@@ -20,6 +20,7 @@ use Framework\Session\PHPSession;
 use Framework\Session\SessionInterface;
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
+use Framework\ActiveRecord\ActiveRecordFactory;
 use Tuupola\Middleware\JwtAuthentication;
 use function DI\create;
 use function DI\get;
