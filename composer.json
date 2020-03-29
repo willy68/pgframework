@@ -6,6 +6,7 @@
             "email": "william.lety@gmail.com"
         }
     ],
+    "minimum-stability": "dev",
     "require": {
         "guzzlehttp/psr7": "^1.6",
         "http-interop/response-sender": "^1.0",
