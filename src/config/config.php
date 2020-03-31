@@ -21,6 +21,8 @@ use Framework\Session\SessionInterface;
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
 use Framework\ActiveRecord\ActiveRecordFactory;
+use GuzzleHttp\Psr7\ServerRequest;
+use Psr\Http\Message\ServerRequestInterface;
 use Tuupola\Middleware\JwtAuthentication;
 use function DI\create;
 use function DI\get;
@@ -60,6 +62,9 @@ return [
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
             ]
         );
+    },
+    ServerRequestInterface::class => function(ContainerInterface $c) {
+        return ServerRequest::fromGlobals();
     }
 
 ];

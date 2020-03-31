@@ -1,5 +1,6 @@
 {
     "name": "willy68/pgframework",
+    "description": "Core du framework pgframework",
     "authors": [
         {
             "name": "William Lety",
