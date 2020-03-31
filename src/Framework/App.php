@@ -110,12 +110,15 @@ class App implements RequestHandlerInterface
     /**
      * Undocumented function
      *
-     * @param ServerRequestInterface $request
+     * @param  ServerRequestInterface|null $request
      * @return ResponseInterface
      * @throws Exception
      */
-    public function run(ServerRequestInterface $request): ResponseInterface
+    public function run(?ServerRequestInterface $request = null): ResponseInterface
     {
+        if ($request === null) {
+            $request = $this->getContainer()->get(ServerRequestInterface::class);
+        }
         foreach ($this->modules as $module) {
             $this->getContainer()->get($module);
         }
