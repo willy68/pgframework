@@ -109,7 +109,11 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
     protected function prepareMiddlewareStack(Router $router, ?Route $route): void
     {
         if ($route) {
-            /** route group stack first */
+            /** router stack first */
+            if ($this->container->has('router.middlewares')) {
+                $router->middlewares($this->container->get('router.middlewares'));
+            }
+            /** route group stack second */
             if ($group = $route->getParentGroup()) {
                 foreach ($group->getMiddlewareStack() as $middleware) {
                     $router->middleware($middleware);
