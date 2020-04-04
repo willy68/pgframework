@@ -191,8 +191,9 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                 if (! is_callable($callback)) {
                     throw new \InvalidArgumentException('Could not resolve a callback for this route');
                 }
-        
-                $response = $this->container->call($callback, ['request' => $request]);
+
+                $params = array_merge(['request' => $request], $this->route->getParams());
+                $response = $this->container->call($callback, $params);
         
                 if (is_string($response)) {
                     return new Response(200, [], $response);
