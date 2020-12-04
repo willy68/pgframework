@@ -6,14 +6,31 @@ interface User
 {
 
     /**
-     * Undocumented function
+     *
+     * @return int
+     */
+    public function getId(): int;
+
+    /**
+     *
+     * @return string
+     */
+    public function getEmail(): string;
+
+    /**
      *
      * @return string
      */
     public function getUsername(): string;
 
     /**
-     * Undocumented function
+     * 
+     *
+     * @return string
+     */
+    public function getPassword(): string;
+
+    /**
      *
      * @return string[]
      */

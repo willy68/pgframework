@@ -18,7 +18,7 @@ class JsonRenderer implements RendererInterface
     }
 
     /**
-     * 
+     *
      *
      * @param mixed $view
      * @param array|int|null $options
@@ -31,7 +31,7 @@ class JsonRenderer implements RendererInterface
                 $options = [$options];
             }
             return $view->to_json($options);
-        } else if (is_array($view)) {
+        } elseif (is_array($view)) {
             return $this->jsonArray($view, $options);
         } else {
             return json_encode($view, $options);
@@ -77,7 +77,6 @@ class JsonRenderer implements RendererInterface
      */
     public function addPath(string $namespace, string $path = null)
     {
-
     }
 
     /**
@@ -89,6 +88,5 @@ class JsonRenderer implements RendererInterface
      */
     public function addGlobal(string $key, $value)
     {
-
     }
 }

@@ -2,15 +2,16 @@
 
 namespace Framework\Actions;
 
-use Framework\Actions\RouterAwareAction;
-use Framework\Database\Hydrator;
-use Framework\Database\NoRecordException;
-use Framework\Database\Table;
-use Framework\Renderer\RendererInterface;
 use Framework\Router;
-use Framework\Session\FlashService;
+use ActiveRecord\Model;
 use Framework\Validator;
+use Framework\Database\Table;
+use Framework\Database\Hydrator;
+use Framework\Session\FlashService;
 use Psr\Http\Message\ResponseInterface;
+use Framework\Actions\RouterAwareAction;
+use Framework\Database\NoRecordException;
+use Framework\Renderer\RendererInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class CrudAction
@@ -33,6 +34,13 @@ class CrudAction
      * @var Table
      */
     protected $table;
+
+    /**
+     * Model class
+     *
+     * @var string
+     */
+    protected $model = Model::class;
 
     /**
      * Undocumented variable
@@ -105,7 +113,9 @@ class CrudAction
     public function index(Request $request): string
     {
         $params = $request->getQueryParams();
-        $items = $this->table->findAll()->paginate(12, $params['p'] ?? 1);
+        // $items = $this->table->findAll()->paginate(12, $params['p'] ?? 1);
+        $items = $this->model::setPaginatedQuery($this->model::findAll())
+                ::paginate(12, $params['p'] ?? 1);
 
         return $this->renderer->render($this->viewPath . '/index', compact('items'));
     }
@@ -119,19 +129,25 @@ class CrudAction
      */
     public function edit(Request $request)
     {
-        $item = $this->table->find($request->getAttribute('id'));
+        // $item = $this->table->find($request->getAttribute('id'));
+        /** @var \ActiveRecord\Model */
+        $item = $this->model::find($request->getAttribute('id'));
         $errors = false;
         $submited = false;
 
         if ($request->getMethod() === 'POST') {
             $validator = $this->getValidator($request);
             if ($validator->isValid()) {
-                $this->table->update($item->id, $this->getParams($request, $item));
+                $item->update_attributes($this->getParams($request, $item));
+                // $this->table->update($item->id, $this->getParams($request, $item));
                 $this->flash->success($this->messages['edit']);
                 return $this->redirect($this->routePrefix . '.index');
             }
             $submited = true;
-            Hydrator::hydrate($request->getParsedBody(), $item);
+            // Hydrator::hydrate($request->getParsedBody(), $item);
+            $item->set_attributes(
+                $this->getFilteredParams($request, $item->attributes(), true)
+            );
             $errors = $validator->getErrors();
         }
 
@@ -149,18 +165,24 @@ class CrudAction
      */
     public function create(Request $request)
     {
-        $item = $this->getNewEntity();
+        // $item = $this->getNewEntity();
+        /** @var \ActiveRecord\Model */
+        $item = new $this->model();
         $errors = false;
         $submited = false;
         if ($request->getMethod() === 'POST') {
             $validator = $this->getValidator($request);
             if ($validator->isValid()) {
-                $this->table->insert($this->getParams($request, $item));
+                // $this->table->insert($this->getParams($request, $item));
+                $item->create($this->getParams($request, $item));
                 $this->flash->success($this->messages['create']);
                 return $this->redirect($this->routePrefix . '.index');
             }
             $submited = true;
-            Hydrator::hydrate($request->getParsedBody(), $item);
+            // Hydrator::hydrate($request->getParsedBody(), $item);
+            $item->set_attributes(
+                $this->getFilteredParams($request, $item->attributes(), true)
+            );
             $errors = $validator->getErrors();
         }
 
@@ -178,7 +200,10 @@ class CrudAction
      */
     public function delete(Request $request)
     {
-        $this->table->delete($request->getAttribute('id'));
+        /** @var \ActiveRecord\Model */
+        $item = $this->model::find($request->getAttribute('id'));
+        // $this->table->delete($request->getAttribute('id'));
+        $item->delete($request->getAttribute('id'));
         return $this->redirect($this->routePrefix . '.index');
     }
 
@@ -186,13 +211,31 @@ class CrudAction
      * Récupère les paramètres POST
      *
      * @param Request $request
-     * @param mixed $item
+     * @param mixed|null $item
      * @return array
      */
-    protected function getParams(Request $request, $item): array
+    protected function getParams(Request $request, $item = null): array
     {
         return array_filter($request->getParsedBody(), function ($key) {
             return in_array($key, []);
+        }, ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * get filtered Post params
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @param array $filter
+     * @param bool $useKey
+     * @return array
+     */
+    protected function getFilteredParams(Request $request, array $filter, bool $useKey = false): array
+    {
+        if ($useKey) {
+            $filter = array_keys($filter);
+        }
+        return array_filter($request->getParsedBody(), function ($key) use ($filter) {
+            return in_array($key, $filter);
         }, ARRAY_FILTER_USE_KEY);
     }
 

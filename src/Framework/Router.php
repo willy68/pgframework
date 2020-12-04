@@ -124,16 +124,16 @@ class Router
      * @param string $prefixPath
      * @param string|callable $callable
      * @param string $prefixName
-     * @return void
+     * @return RouteGroup
      */
-    public function crud(string $prefixPath, $callable, string $prefixName): void
+    public function crud(string $prefixPath, $callable, string $prefixName): RouteGroup
     {
-        $this->get("$prefixPath", $callable . '::index', "$prefixName.index");
-        $this->get("$prefixPath/new", $callable . '::create', "$prefixName.create");
-        $this->post("$prefixPath/new", $callable . '::create');
-        $this->get("$prefixPath/{id:\d+}", $callable . '::edit', "$prefixName.edit");
-        $this->post("$prefixPath/{id:\d+}", $callable . '::edit');
-        $this->delete("$prefixPath/{id:\d+}", $callable . '::delete', "$prefixName.delete");
+        return $this->group(
+            $prefixPath,
+            function (RouteGroup $route) use ($callable, $prefixName) {
+                $route->crud($callable, $prefixName);
+            }
+        );
     }
 
     /**

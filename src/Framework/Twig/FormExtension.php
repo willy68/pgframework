@@ -38,7 +38,7 @@ class FormExtension extends AbstractExtension
         $error = $this->getErrorHTML($context, $key);
         $value = $this->convertValue($value);
         $attributes = [
-            'class' => ($options['class'] ?? '') . ' form-control',
+            'class' => ($options['class'] ?? '') . 'form-control',
             'name'  => $key,
             'id'    => $key
         ];
@@ -158,7 +158,6 @@ class FormExtension extends AbstractExtension
      */
     private function checkbox(?string $value, array $attributes): string
     {
-        $name =
         $html = "<input type=\"hidden\"" .
         " name=\"" . $attributes['name'] . "\"" .
         " value=\"0\"/>";
@@ -166,7 +165,7 @@ class FormExtension extends AbstractExtension
             $attributes['checked'] = true;
         }
         return $html .
-            "<input type=\"checkbox\"" .
+            "<input type=\"checkbox\" " .
             $this->getHtmlFromArray($attributes) .
             " value=\"1\"/>";
     }

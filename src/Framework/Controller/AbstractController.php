@@ -54,5 +54,4 @@ class AbstractController
         }
         return $options;
     }
-
 }

@@ -39,14 +39,32 @@ class App implements RequestHandlerInterface
     private $modules = [];
 
     /**
+     * Self static
+     *
+     * @var App
+     */
+    private static $app = null;
+
+    /**
      * App constructor
      *
      * @param array $config
      */
     public function __construct(array $config)
     {
-        $this->config[] = dirname(__DIR__ ) . '/config/config.php';
+        $this->config[] = dirname(__DIR__) . '/config/config.php';
         $this->config = \array_merge($this->config, $config);
+        self::$app = $this;
+    }
+
+    /**
+     * Get Self instance
+     *
+     * @return App|null
+     */
+    public static function getApp(): ?App
+    {
+        return self::$app;
     }
 
     /**
@@ -67,13 +85,13 @@ class App implements RequestHandlerInterface
          * @param array $modules
          * @return self
          */
-        public function addModules(array $modules): self
-        {
-            foreach ($modules as $module) {
-                $this->addModule($module);
-            }
-            return $this;
+    public function addModules(array $modules): self
+    {
+        foreach ($modules as $module) {
+            $this->addModule($module);
         }
+        return $this;
+    }
 
     /**
      * Undocumented function

@@ -38,7 +38,6 @@ class CsrfSetCookieMiddleware implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $params = $request->getServerParams();
         if (\in_array($request->getMethod(), ['GET', 'HEAD'], true)) {
             $response = $handler->handle($request);
             if (!FigResponseCookies::get($response, 'XSRF-TOKEN')->getValue()) {

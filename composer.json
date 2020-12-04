@@ -13,16 +13,17 @@
         "php-di/php-di": "^6.0",
         "twig/twig": "^3.0",
         "mezzio/mezzio-fastroute": "^3.0",
+        "tuupola/http-factory": "^1.1",
         "pagerfanta/pagerfanta": "^2.1",
         "grafikart/psr15-csrf-middleware": "^1.0",
         "intervention/image": "^2.5",
         "doctrine/annotations": "^1.8",
         "dflydev/fig-cookies": "^2.0",
-        "tuupola/http-factory": "^1.1",
         "tuupola/slim-jwt-auth": "^3.4",
         "willy68/php-activerecord-dev": "^1.2",
         "ext-json": "*",
-        "ext-pdo": "*"
+        "ext-pdo": "*",
+        "symfony/dotenv": "^5.0"
     },
     "autoload": {
         "psr-4": {

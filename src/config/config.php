@@ -21,9 +21,27 @@ use Framework\Session\SessionInterface;
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
 use Framework\ActiveRecord\ActiveRecordFactory;
+use Framework\Validator\Filter\StriptagsFilter;
+use Framework\Validator\Filter\TrimFilter;
+use Framework\Validator\Validation\{
+    DateFormatValidation,
+    EmailConfirmValidation,
+    EmailValidation,
+    ExistsValidation,
+    ExtensionValidation,
+    MaxValidation,
+    MinValidation,
+    RangeValidation,
+    RequiredValidation,
+    SlugValidation,
+    UniqueValidation,
+    UploadedValidation,
+    NotEmptyValidation
+};
 use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
 use Tuupola\Middleware\JwtAuthentication;
+
 use function DI\create;
 use function DI\get;
 use function DI\factory;
@@ -42,6 +60,25 @@ return [
         get(FormExtension::class),
         get(CsrfExtension::class),
     ],
+    'form.validations' => \DI\add([
+        'required' => RequiredValidation::class,
+        'min' => MinValidation::class,
+        'max' => MaxValidation::class,
+        'date' => DateFormatValidation::class,
+        'email' => EmailValidation::class,
+        'emailConfirm' => EmailConfirmValidation::class,
+        'notEmpty' => NotEmptyValidation::class,
+        'range' => RangeValidation::class,
+        'filetype' => ExtensionValidation::class,
+        'uploaded' => UploadedValidation::class,
+        'slug' => SlugValidation::class,
+        'exists' => ExistsValidation::class,
+        'unique' => UniqueValidation::class
+    ]),
+    'form.filters' => \DI\add([
+        'trim' => TrimFilter::class,
+        'striptags' => StriptagsFilter::class
+    ]),
     SessionInterface::class => create(PHPSession::class),
     CsrfMiddleware::class =>
     create()->constructor(get(SessionInterface::class)),
@@ -63,7 +100,7 @@ return [
             ]
         );
     },
-    ServerRequestInterface::class => function(ContainerInterface $c) {
+    ServerRequestInterface::class => function (ContainerInterface $c) {
         return ServerRequest::fromGlobals();
     }
 

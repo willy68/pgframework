@@ -2,7 +2,7 @@
 
 namespace Framework;
 
-use Framework\Database\Table;
+use Framework\Validator\Validation\ValidationRules;
 use Framework\Validator\ValidationError;
 use PDO;
 
@@ -28,6 +28,13 @@ class Validator
      * @var ValidationError[]
      */
     private $errors = [];
+
+    /**
+     * ValidationRule
+     *
+     * @var ValidationRules[]
+     */
+    private $validations = [];
 
     /**
      * Validator constructor.
@@ -156,7 +163,7 @@ class Validator
         $id = $this->getValue($key);
         $statement = $pdo->prepare("SELECT id FROM {$table} WHERE id=?");
         $statement->execute([$id]);
-        if ($statement->fetchColumn() == false) {
+        if ($statement->fetchColumn() === false) {
             $this->addError($key, 'exists', [$table]);
         }
         return $this;
@@ -239,6 +246,36 @@ class Validator
     public function getErrors(): array
     {
         return $this->errors;
+    }
+
+    /**
+     * Add rules to validator
+     *
+     * 'fieldName' => 'rule1|rule2:50|filter:trim'
+     *
+     * ex addRules([
+     *
+     *      'auteur' => 'required|max:50|min:3|filter:trim',
+     *
+     *      'email' => 'required|email|filter:trim',
+     *
+     *      'emailConfirm' => 'required|emailConfirm:email|filter:trim'
+     *
+     * ]);
+     *
+     * @param array $rules
+     * @return self
+     */
+    public function addRules(array $rules): self
+    {
+        if (!empty($rules)) {
+            foreach ($rules as $key => $value) {
+                $validation = new ValidationRules($key, $value);
+                $validation->isValid($this->getValue($key));
+                $this->errors = array_merge($this->errors, $validation->getErrors());
+            }
+        }
+        return $this;
     }
 
     /**

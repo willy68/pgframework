@@ -4,7 +4,6 @@ namespace Framework\HttpUtils;
 
 use Psr\Http\Message\ServerRequestInterface;
 
-
 class RequestUtils
 {
 
@@ -34,7 +33,7 @@ class RequestUtils
     }
 
     /**
-     * 
+     *
      *
      * @param ServerRequestInterface $request
      * @return string

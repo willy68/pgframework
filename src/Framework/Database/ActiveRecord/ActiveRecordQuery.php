@@ -1,14 +1,13 @@
 <?php
 
-namespace Framework\Database;
+namespace Framework\Database\ActiveRecord;
 
-use Pagerfanta\Pagerfanta;
-use PDO;
-
-class Query implements \IteratorAggregate
+class ActiveRecordQuery
 {
 
-    private $pdo;
+    private $options = [];
+
+    private $whereValue = [];
 
     private $select;
 
@@ -18,8 +17,6 @@ class Query implements \IteratorAggregate
      * @var array
      */
     private $from = [];
-
-    private $entity;
 
     private $where = [];
 
@@ -34,12 +31,10 @@ class Query implements \IteratorAggregate
     private $params = [];
 
     /**
-     * Query constructor.
-     * @param PDO|null $pdo
+     * ActiveRecordQuery constructor
      */
-    public function __construct(?PDO $pdo = null)
+    public function __construct()
     {
-        $this->pdo = $pdo;
     }
 
     /**
@@ -56,19 +51,7 @@ class Query implements \IteratorAggregate
         } else {
             $this->from[] = $table;
         }
-        // $this->from[] = $table;
-        return $this;
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @param string $entity
-     * @return self
-     */
-    public function into(string $entity): self
-    {
-        $this->entity = $entity;
+        $this->options['from'] = $this->buildFrom();
         return $this;
     }
 
@@ -80,7 +63,59 @@ class Query implements \IteratorAggregate
      */
     public function select(string ...$fields): self
     {
-        $this->select = $fields;
+        $this->options['select'] = join(', ', $fields);
+        return $this;
+    }
+
+    /**
+     *
+     * @param string[] ...$condition
+     * @return self
+     */
+    public function where(string ...$condition): self
+    {
+        if (empty($this->options['conditions'])) {
+            $this->options['conditions'] = [];
+        }
+        $this->options['conditions'] = [
+            join(
+                ' AND ',
+                array_merge($this->options['conditions'], $condition)
+            )
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param string[] ...$condition
+     * @return self
+     */
+    public function orWhere(string ...$condition): self
+    {
+        if (empty($this->options['conditions'])) {
+            $this->options['conditions'] = [];
+        }
+        $this->options['conditions'] = [
+            join(
+                ' OR ',
+                array_merge($this->options['conditions'], $condition)
+            )
+        ];
+        return $this;
+    }
+
+    /**
+     * - Ajoute les valeur au tableau conditions
+     * - A ne faire qu'après toutes les conditions
+     *
+     * @param array $whereValue
+     * @return self
+     */
+    public function setWhereValue(array $whereValue): self
+    {
+        $this->whereValue = array_merge($this->whereValue, $whereValue);
+        $this->options['conditions'] = array_merge($this->options['conditions'], $this->whereValue);
         return $this;
     }
 
@@ -93,9 +128,20 @@ class Query implements \IteratorAggregate
      */
     public function limit($length, $offset = 0): self
     {
-        $length = (int) $length;
-        $offset = (int) $offset;
-        $this->limit = "$offset, $length";
+        $this->options['limit'] = (int) $length;
+        $this->options['offset'] = (int) $offset;
+        return $this;
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @param int $offset
+     * @return self
+     */
+    public function offset($offset = 0): self
+    {
+        $this->options['offset'] = (int) $offset;
         return $this;
     }
 
@@ -107,46 +153,49 @@ class Query implements \IteratorAggregate
      */
     public function order(string $orders): self
     {
-        $this->order[] = $orders;
+        $this->options['order'] = $orders;
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $group
+     * @return self
+     */
+    public function group(string $group): self
+    {
+        $this->options['group'] = "GROUP BY $group";
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $having
+     * @return self
+     */
+    public function having(string $having): self
+    {
+        $this->options['having'] = "HAVING $having";
         return $this;
     }
 
     /**
      * Undocumented function
      *
-     * @param string $table
-     * @param string $condition
+     * @param string|array $table
+     * @param string|null $condition
      * @param string $type
      * @return self
      */
-    public function join(string $table, string $condition, string $type = 'LEFT'): self
+    public function join($table, ?string $condition = null, string $type = 'LEFT'): self
     {
-        $this->joins[$type][] = [$table, $condition, $type];
+        if (is_array($table)) {
+            $this->options['joins'] = $table;
+        } else {
+            $this->joins[$type][] = [$table, $condition, $type];
+            $this->options['joins'] = $this->buildJoins();
+        }
         return $this;
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @param string[] ...$condition
-     * @return self
-     */
-    public function where(string ...$condition): self
-    {
-        $this->where = array_merge($this->where, $condition);
-        return $this;
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @return mixed
-     */
-    public function count()
-    {
-        $query = clone $this;
-        $table = current($this->from);
-        return $query->select("COUNT($table.id)")->execute()->fetchColumn();
     }
 
     /**
@@ -159,66 +208,6 @@ class Query implements \IteratorAggregate
     {
         $this->params = array_merge($this->params, $params);
         return $this;
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @return QueryResult
-     */
-    public function fetchAll(): QueryResult
-    {
-        return new QueryResult(
-            $this->execute()->fetchAll(PDO::FETCH_ASSOC),
-            $this->entity
-        );
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @return mixed
-     */
-    public function fetch()
-    {
-        $record = $this->execute()->fetch(PDO::FETCH_ASSOC);
-        if ($record === false) {
-            return false;
-        }
-        if ($this->entity) {
-            return Hydrator::hydrate($record, $this->entity);
-        }
-        return $record;
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @return mixed
-     * @throws NoRecordException
-     */
-    public function fetchOrFail()
-    {
-        $record = $this->fetch();
-        if ($record === false) {
-            throw new NoRecordException();
-        }
-        return $record;
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @param int $perPage
-     * @param int $currentPage
-     * @return Pagerfanta
-     */
-    public function paginate(int $perPage, int $currentPage = 1): Pagerfanta
-    {
-        $paginator = new PaginatedQuery($this);
-        return (new Pagerfanta($paginator))
-            ->setMaxPerPage($perPage)
-            ->setCurrentPage($currentPage);
     }
 
     /**
@@ -239,7 +228,7 @@ class Query implements \IteratorAggregate
         if (!empty($this->joins)) {
             foreach ($this->joins as $type => $joins) {
                 foreach ($joins as [$table, $condition]) {
-                    $parts [] = strtoupper($type) . " JOIN $table ON $condition";
+                    $parts[] = strtoupper($type) . " JOIN $table ON $condition";
                 }
             }
         }
@@ -248,8 +237,8 @@ class Query implements \IteratorAggregate
             $parts[] = "(" . join(') AND (', $this->where) . ")";
         }
         if (!empty($this->order)) {
-            $parts [] = 'ORDER BY';
-                $parts[] = join(', ', $this->order);
+            $parts[] = 'ORDER BY';
+            $parts[] = join(', ', $this->order);
         }
         if ($this->limit) {
             $parts[] = 'LIMIT ' . $this->limit;
@@ -315,28 +304,14 @@ class Query implements \IteratorAggregate
         return join(', ', $from);
     }
 
-    /**
-     * Undocumented function
-     *
-     * @return mixed
-     */
-    private function execute()
+    private function buildJoins()
     {
-        $query = $this->__toString();
-        if (!empty($this->params)) {
-            $stmt = $this->pdo->prepare($query);
-            $stmt->execute($this->params);
-            return $stmt;
+        $parts = [];
+        foreach ($this->joins as $type => $joins) {
+            foreach ($joins as [$table, $condition]) {
+                $parts[] = strtoupper($type) . " JOIN $table ON $condition";
+            }
         }
-        return $this->pdo->query($query);
-    }
-
-    /**
-     * @inheritDoc
-     *
-     */
-    public function getIterator()
-    {
-        return $this->fetchAll();
+        return join(' ', $parts);
     }
 }

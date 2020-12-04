@@ -3,6 +3,7 @@
 namespace Framework\ActiveRecord;
 
 use ActiveRecord;
+use ActiveRecord\Connection;
 use Psr\Container\ContainerInterface;
 
 class ActiveRecordFactory
@@ -23,6 +24,9 @@ class ActiveRecordFactory
 
             // default connection is now development
             $cfg->set_default_connection('development');
+
+            // Datetime format
+            Connection::$datetime_format = 'Y-m-d H:i:s';
         });
         return true;
     }

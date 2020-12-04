@@ -54,14 +54,28 @@ class ValidationError
     }
 
     /**
+     * Add error message for rule
+     * if rule exists, error message will be replaced
+     *
+     * @param string $rule
+     * @param string $error
+     * @return self
+     */
+    public function addErrorMsg(string $rule, string $error): self
+    {
+        $this->messages[$rule] = $error;
+        return $this;
+    }
+
+    /**
      * @return string
      */
     public function __toString()
     {
         $params = array_merge(
             [
-            $this->messages[$this->rule],
-            $this->key
+                $this->messages[$this->rule],
+                $this->key
             ],
             $this->attributes
         );
