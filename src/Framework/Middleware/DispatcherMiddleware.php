@@ -5,7 +5,6 @@ namespace Framework\Middleware;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
-use function DI\decorate;
 use Framework\Router;
 use Framework\Router\Route;
 use Framework\Router\RouteResult;
