@@ -5,6 +5,7 @@ namespace Framework\Middleware;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use function DI\decorate;
 use Framework\Router;
 use Framework\Router\Route;
 use Framework\Router\RouteResult;
@@ -192,8 +193,10 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                     throw new \InvalidArgumentException('Could not resolve a callback for this route');
                 }
 
-                $params = array_merge(['request' => $request], $this->route->getParams());
-                $response = $this->container->call($callback, $params);
+                //$params = array_merge(['request' => $request], $this->route->getParams());
+                //$response = $this->container->call($callback, $params);
+                $this->container->set(ServerRequestInterface::class, $request);
+                $response = $this->container->call($callback, $this->route->getParams());
         
                 if (is_string($response)) {
                     return new Response(200, [], $response);

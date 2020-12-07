@@ -99,9 +99,9 @@ return [
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
             ]
         );
-    },
+    }/*,
     ServerRequestInterface::class => function (ContainerInterface $c) {
         return ServerRequest::fromGlobals();
-    }
+    }*/
 
 ];

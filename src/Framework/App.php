@@ -2,8 +2,9 @@
 
 namespace Framework;
 
-use DI\ContainerBuilder;
 use Exception;
+use DI\ContainerBuilder;
+use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -135,7 +136,8 @@ class App implements RequestHandlerInterface
     public function run(?ServerRequestInterface $request = null): ResponseInterface
     {
         if ($request === null) {
-            $request = $this->getContainer()->get(ServerRequestInterface::class);
+            $request = ServerRequest::fromGlobals();
+            //$request = $this->getContainer()->get(ServerRequestInterface::class);
         }
         foreach ($this->modules as $module) {
             $this->getContainer()->get($module);
