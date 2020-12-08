@@ -49,11 +49,13 @@ class RouterMiddleware implements MiddlewareInterface
         $request = array_reduce(
             array_keys($params),
             function ($request, $key) use ($params) {
+                /** @var ServerRequestInterface $request */
                 return $request->withAttribute($key, $params[$key]);
             },
             $request
         );
 
+        /** @var ServerRequestInterface $request */
         $request = $request->withAttribute(get_class($result), $result);
         return $next->handle($request);
     }
