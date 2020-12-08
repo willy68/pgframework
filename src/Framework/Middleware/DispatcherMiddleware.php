@@ -194,7 +194,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                     $this->container->set(ServerRequestInterface::class, $request);
                     $response = $this->container->call($callback, $this->route->getParams());
                 } else {
-                    call_user_func_array($callback, [$request]);
+                    $response = call_user_func_array($callback, [$request]);
                 }
         
                 if (is_string($response)) {
