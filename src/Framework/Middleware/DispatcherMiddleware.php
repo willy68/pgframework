@@ -2,9 +2,6 @@
 
 namespace Framework\Middleware;
 
-use DI\Container;
-use DI\DependencyException;
-use DI\NotFoundException;
 use Framework\Router;
 use Framework\Router\Route;
 use Framework\Router\RouteResult;
@@ -21,9 +18,9 @@ use Psr\Http\Server\RequestHandlerInterface;
 class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterface
 {
     /**
-     * Undocumented variable
+     * Injection container
      *
-     * @var Container
+     * @var ContainerInterface
      */
     private $container;
 
@@ -42,7 +39,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
     private $next;
 
     /**
-     * Undocumented function
+     *
      *
      * @param ContainerInterface $container
      */
@@ -52,7 +49,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
     }
 
     /**
-     * Undocumented function
+     * Psr15 middleware process method
      *
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $next
@@ -147,9 +144,9 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
             protected $route;
 
             /**
-             * Container DI
+             * ContainerInterface
              *
-             * @var Container
+             * @var ContainerInterface
              */
             protected $container;
 
@@ -165,6 +162,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
             }
 
             /**
+             * Psr15 middleware process method
              * @param ServerRequestInterface $request
              * @param RequestHandlerInterface $requestHandler
              * @return ResponseInterface
@@ -192,10 +190,12 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                     throw new \InvalidArgumentException('Could not resolve a callback for this route');
                 }
 
-                //$params = array_merge(['request' => $request], $this->route->getParams());
-                //$response = $this->container->call($callback, $params);
-                $this->container->set(ServerRequestInterface::class, $request);
-                $response = $this->container->call($callback, $this->route->getParams());
+                if ($this->container instanceof \DI\Container) {
+                    $this->container->set(ServerRequestInterface::class, $request);
+                    $response = $this->container->call($callback, $this->route->getParams());
+                } else {
+                    call_user_func_array($callback, [$request]);
+                }
         
                 if (is_string($response)) {
                     return new Response(200, [], $response);
