@@ -29,15 +29,18 @@ class RememberMe implements RememberMeInterface
     ];
     
     /**
+     * User Provider
      * 
-     *
      * @var UserProvider
      */
     private $userProvider;
 
-    public function __construct(UserProvider $userProvider )
+    public function __construct(UserProvider $userProvider, array $options = [])
     {
         $this->userProvider = $userProvider;
+        if (!empty($options)) {
+            $this->options = array_merge($this->options, $options);
+        }
     }
 
     /**
