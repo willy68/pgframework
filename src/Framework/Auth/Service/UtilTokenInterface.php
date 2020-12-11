@@ -9,12 +9,12 @@ namespace Framework\Auth\Service;
 interface UtilTokenInterface
 {
     /**
-     * Génère un token à partir des champs credential, password et sécurity
+     * Génère un token à partir des champs credential, password et salt
      *
      * @param string $credential (ex. username ou email)
      * @param string $password mot de passe généré par la fonction password_hash
      * habituellement
-     * @param string $security par défaut à une chaine vide
+     * @param string $salt par défaut à une chaine vide
      * mais peut être une variable d'environnement ou autre
      * @return string
      */
@@ -40,7 +40,7 @@ interface UtilTokenInterface
      * @param string $credential (ex. username ou email)
      * @param string $password mot de passe généré par la fonction password_hash
      * habituellement
-     * @param string $security par défaut à une chaine vide
+     * @param string $salt par défaut à une chaine vide
      * mais peut être une variable d'environnement ou autre
      * @return bool
      */

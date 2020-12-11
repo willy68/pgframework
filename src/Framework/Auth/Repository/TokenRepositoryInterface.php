@@ -14,4 +14,12 @@ interface TokenRepositoryInterface
      * @return \Framework\Auth\TokenInterface|null
      */
     public function getToken(string $credential): ?TokenInterface;
+
+    /**
+     * Sauvegarde le token (database, cookie, les deux ou autre)
+     *
+     * @param array $token
+     * @return TokenInterface|null
+     */
+    public function saveToken(array $token): ?TokenInterface;
 }
