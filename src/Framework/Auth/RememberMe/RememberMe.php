@@ -51,9 +51,7 @@ class RememberMe implements RememberMeInterface
     ) {
         $this->userRepository = $userRepository;
         $this->cookieToken = $cookieToken;
-        if (!empty($options)) {
-            $this->options = array_merge($this->options, $options);
-        }
+        $this->setOptions($options);
     }
 
     /**
@@ -147,5 +145,19 @@ class RememberMe implements RememberMeInterface
             $response = FigResponseCookies::set($response, $setCookie);
         }
         return $response;
+    }
+
+    /**
+     * Modifie le tableau d'options du cookie
+     *
+     * @param array $options
+     * @return RememberMeInterface
+     */
+    public function setOptions(array $options = []): RememberMeInterface
+    {
+        if (!empty($options)) {
+            $this->options = array_merge($this->options, $options);
+        }
+        return $this;
     }
 }

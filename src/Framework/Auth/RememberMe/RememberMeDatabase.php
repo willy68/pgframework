@@ -12,7 +12,7 @@ use Framework\Auth\Repository\UserRepositoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Framework\Auth\Service\UtilTokenInterface;
 
-class RememberMeDatabase implements RememberMeInterface
+class RememberMeDatabase extends RememberMe
 {
     private $salt = 'pass_phrase';
 
@@ -58,12 +58,8 @@ class RememberMeDatabase implements RememberMeInterface
     TokenRepositoryInterface $tokenRepository,
     array $options = []
   ) {
-        $this->userRepository = $userRepository;
-        $this->cookieToken = $cookieToken;
+        parent::__construct($userRepository, $cookieToken, $options);
         $this->tokenRepository = $tokenRepository;
-        if (!empty($options)) {
-            $this->options = array_merge($this->options, $options);
-        }
     }
 
     /**
@@ -79,10 +75,9 @@ class RememberMeDatabase implements RememberMeInterface
         string $username,
         string $password
     ): ResponseInterface {
+        $response = parent::onLogin($response, $username, $password);
         $expirationCookie = time() + $this->options['expires'];
-        $expirationDate = new \DateTime($expirationCookie);
-
-        $value = $this->cookieToken->getToken($username, $password, $this->salt);
+        $expirationDate = date('Y-m-d H:i:s' , $expirationCookie);
         //['credential', 'random_password', 'expiration_date', 'is_expired']
         $this->tokenRepository->saveToken(
             [
@@ -92,14 +87,7 @@ class RememberMeDatabase implements RememberMeInterface
                 'is_expired' => false
             ]
         );
-        $cookie = SetCookie::create($this->options['name'])
-            ->withValue($value)
-            ->withExpires($expirationCookie)
-            ->withPath($this->options['path'])
-            ->withDomain(null)
-            ->withSecure(false)
-            ->withHttpOnly(false);
-        return FigResponseCookies::set($response, $cookie);
+        return $response;
     }
 
     /**
@@ -136,15 +124,19 @@ class RememberMeDatabase implements RememberMeInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            $cookie = SetCookie::create($this->options['name'])
-                ->withValue('')
-                ->withExpires(time() - 3600)
-                ->withPath($this->options['path'])
-                ->withDomain(null)
-                ->withSecure(false)
-                ->withHttpOnly(false);
-            $response = FigResponseCookies::set($response, $cookie);
+            list($username, $password) = $this->cookieToken->decodeToken($cookie->getValue());
         }
+        $response = parent::onLogout($request, $response);
+        /** @todo create TokenRepositoryInterface::updateToken(array $token) */ 
+        $this->tokenRepository->saveToken(
+            [
+                'credential' => $username, 
+                'random_password' => '', 
+                'expiration_date' => new \DateTime(-3600), 
+                'is_expired' => true
+            ]
+        );
+
         return $response;
     }
 
