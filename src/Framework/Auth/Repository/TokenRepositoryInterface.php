@@ -4,7 +4,7 @@ namespace Framework\Auth\Repository;
 
 use Framework\Auth\TokenInterface;
 
-interface TokenRepository
+interface TokenRepositoryInterface
 {
 
     /**

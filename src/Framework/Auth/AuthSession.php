@@ -5,7 +5,7 @@ namespace Framework\Auth;
 use Framework\Auth;
 use Framework\Auth\User;
 use Framework\Session\SessionInterface;
-use Framework\Auth\Repository\UserRepository;
+use Framework\Auth\Repository\UserRepositoryInterface;
 
 class AuthSession implements Auth
 {
@@ -36,13 +36,13 @@ class AuthSession implements Auth
     /**
      * 
      *
-     * @var UserRepository
+     * @var UserRepositoryInterface
      */
     protected $userRepository;
 
     public function __construct(
         SessionInterface $session,
-        UserRepository $userRepository,
+        UserRepositoryInterface $userRepository,
         array $options = []
     )
     {
