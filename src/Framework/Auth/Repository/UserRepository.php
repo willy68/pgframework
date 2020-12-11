@@ -1,10 +1,10 @@
 <?php
 
-namespace Framework\Auth\Provider;
+namespace Framework\Auth\Repository;
 
 use Framework\Auth\User;
 
-interface UserProvider
+interface UserRepository
 {
     public function getUser(string $field, $value): ?User;
 }

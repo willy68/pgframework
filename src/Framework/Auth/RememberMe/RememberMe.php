@@ -6,13 +6,14 @@ use Framework\Auth\User;
 use Dflydev\FigCookies\SetCookie;
 use Psr\Http\Message\ResponseInterface;
 use Dflydev\FigCookies\FigRequestCookies;
-use Framework\Auth\Provider\UserProvider;
 use Dflydev\FigCookies\FigResponseCookies;
+use Framework\Auth\Repository\UserRepository;
 use Psr\Http\Message\ServerRequestInterface;
 use Framework\Auth\Service\AuthSecurityToken;
 
 class RememberMe implements RememberMeInterface
 {
+    private $salt = 'pass_phrase';
     /**
      * Cookie options
      *
@@ -31,13 +32,13 @@ class RememberMe implements RememberMeInterface
     /**
      * User Provider
      * 
-     * @var UserProvider
+     * @var UserRepository
      */
-    private $userProvider;
+    private $userRepository;
 
-    public function __construct(UserProvider $userProvider, array $options = [])
+    public function __construct(UserRepository $userRepository, array $options = [])
     {
-        $this->userProvider = $userProvider;
+        $this->userRepository = $userRepository;
         if (!empty($options)) {
             $this->options = array_merge($this->options, $options);
         }
@@ -54,14 +55,13 @@ class RememberMe implements RememberMeInterface
     public function onLogin(
         ResponseInterface $response,
         string $username,
-        string $password,
-        string $secret
+        string $password
     ): ResponseInterface
     {
         $value = AuthSecurityToken::generateSecurityToken(
             $username,
             $password,
-            $secret);
+            $this->salt);
 
         $cookie = SetCookie::create($this->options['name'])
             ->withValue($value)
@@ -80,17 +80,17 @@ class RememberMe implements RememberMeInterface
      * @param string $secret
      * @return User|null
      */
-    public function autoLogin(ServerRequestInterface $request, string $secret): ?User
+    public function autoLogin(ServerRequestInterface $request): ?User
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
             list($username, $password) = AuthSecurityToken::decodeSecurityToken($cookie->getValue());
-            $user = $this->userProvider->getUser($this->options['field'], $username);
+            $user = $this->userRepository->getUser($this->options['field'], $username);
             if ($user && AuthSecurityToken::validateSecurityToken(
                         $cookie->getValue(),
                         $username,
                         $user->getPassword(),
-                        $secret
+                        $this->salt
                     )
                 ) {
                     return $user;

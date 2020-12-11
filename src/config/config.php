@@ -38,8 +38,6 @@ use Framework\Validator\Validation\{
     UploadedValidation,
     NotEmptyValidation
 };
-use GuzzleHttp\Psr7\ServerRequest;
-use Psr\Http\Message\ServerRequestInterface;
 use Tuupola\Middleware\JwtAuthentication;
 
 use function DI\create;

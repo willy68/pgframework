@@ -1,10 +1,10 @@
 <?php
 
-namespace Framework\Auth\Provider;
+namespace Framework\Auth\Repository;
 
 use Framework\Auth\TokenInterface;
 
-interface TokenProvider
+interface TokenRepository
 {
 
     /**

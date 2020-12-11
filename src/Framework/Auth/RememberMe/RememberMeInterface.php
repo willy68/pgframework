@@ -21,8 +21,7 @@ interface RememberMeInterface
     public function onLogin(
         ResponseInterface $response,
         string $username,
-        string $password,
-        string $secret
+        string $password
     ): ResponseInterface;
 
     /**
@@ -32,7 +31,7 @@ interface RememberMeInterface
      * @param string $secret
      * @return User|null
      */
-    public function autoLogin(ServerRequestInterface $request, string $secret): ?User;
+    public function autoLogin(ServerRequestInterface $request): ?User;
 
     /**
      * Déconnecte l'utilisateur et invalide le cookie dans la response

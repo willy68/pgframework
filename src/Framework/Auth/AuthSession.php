@@ -5,7 +5,7 @@ namespace Framework\Auth;
 use Framework\Auth;
 use Framework\Auth\User;
 use Framework\Session\SessionInterface;
-use Framework\Auth\Provider\UserProvider;
+use Framework\Auth\Repository\UserRepository;
 
 class AuthSession implements Auth
 {
@@ -36,18 +36,18 @@ class AuthSession implements Auth
     /**
      * 
      *
-     * @var UserProvider
+     * @var UserRepository
      */
-    protected $userProvider;
+    protected $userRepository;
 
     public function __construct(
         SessionInterface $session,
-        UserProvider $userProvider,
+        UserRepository $userRepository,
         array $options = []
     )
     {
         $this->session = $session;
-        $this->userProvider = $userProvider;
+        $this->userRepository = $userRepository;
         if (!empty($options)) {
             $this->options = array_merge($this->options, $options);
         }
@@ -66,7 +66,7 @@ class AuthSession implements Auth
         }
 
         /** @var User $user */
-        $user = $this->userProvider->getUser($this->options['field'], $username);
+        $user = $this->userRepository->getUser($this->options['field'], $username);
         if ($user && password_verify($password, $user->getPassword())) {
             $this->setUser($user);
             return $user;
@@ -93,7 +93,7 @@ class AuthSession implements Auth
                 return $this->user;
             }
             try {
-                $this->user = $this->userProvider->getUser('id', $userId);
+                $this->user = $this->userRepository->getUser('id', $userId);
                 return $this->user;
             } catch (\Exception $e) {
                 $this->session->delete($this->options['sessionName']);
