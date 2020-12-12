@@ -2,7 +2,7 @@
 
 namespace Framework\Auth\Service;
 
-class CookieToken implements UtilTokenInterface
+class UtilToken implements UtilTokenInterface
 {
     const SEPARATOR = ':';
 
