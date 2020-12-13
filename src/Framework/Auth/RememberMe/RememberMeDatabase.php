@@ -4,13 +4,14 @@ namespace Framework\Auth\RememberMe;
 
 use Framework\Auth\User;
 use Dflydev\FigCookies\SetCookie;
+use Framework\Auth\Security\Security;
 use Psr\Http\Message\ResponseInterface;
 use Dflydev\FigCookies\FigRequestCookies;
 use Dflydev\FigCookies\FigResponseCookies;
-use Framework\Auth\Repository\TokenRepositoryInterface;
-use Framework\Auth\Repository\UserRepositoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Framework\Auth\Service\UtilTokenInterface;
+use Framework\Auth\Repository\UserRepositoryInterface;
+use Framework\Auth\Repository\TokenRepositoryInterface;
 
 class RememberMeDatabase extends RememberMe
 {
@@ -28,7 +29,7 @@ class RememberMeDatabase extends RememberMe
     TokenRepositoryInterface $tokenRepository,
     array $options = []
   ) {
-        parent::__construct($userRepository, $utilToken, array_merge(['password_cookie_name' => 'randam_password'], $options));
+        parent::__construct($userRepository, $utilToken, array_merge(['password_cookie_name' => 'random_password'], $options));
         $this->tokenRepository = $tokenRepository;
     }
 
@@ -48,18 +49,18 @@ class RememberMeDatabase extends RememberMe
         $response = parent::onLogin($response, $credential, $password);
         $expirationDate = date('Y-m-d H:i:s' , $this->expirationDate);
         //['credential', 'random_password', 'expiration_date', 'is_expired']
+        $randomPassword = Security::randomPassword(24);
         $this->tokenRepository->saveToken(
             [
                 'credential' => $credential, 
-                'random_password' => $password, 
+                'random_password' => $randomPassword, 
                 'expiration_date' => $expirationDate, 
                 'is_expired' => false
             ]
         );
         // créé une class Security::randomPassword
-        $value = '';
         $cookie = SetCookie::create($this->options['password_cookie_name'])
-        ->withValue($value)
+        ->withValue($randomPassword)
         ->withExpires($this->expirationDate)
         ->withPath($this->options['path'])
         ->withDomain(null)
