@@ -49,6 +49,7 @@ class RememberMeDatabase extends RememberMe
         $response = parent::onLogin($response, $credential, $password);
         $expirationDate = date('Y-m-d H:i:s' , $this->expirationDate);
         //['credential', 'random_password', 'expiration_date', 'is_expired']
+        // créé une class Security::randomPassword
         $randomPassword = Security::randomPassword(24);
         $this->tokenRepository->saveToken(
             [
@@ -58,7 +59,6 @@ class RememberMeDatabase extends RememberMe
                 'is_expired' => false
             ]
         );
-        // créé une class Security::randomPassword
         $cookie = SetCookie::create($this->options['password_cookie_name'])
         ->withValue($randomPassword)
         ->withExpires($this->expirationDate)
