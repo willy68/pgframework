@@ -4,39 +4,17 @@ namespace Framework\Auth\RememberMe;
 
 use Framework\Auth\User;
 use Dflydev\FigCookies\SetCookie;
+use Framework\Auth\Security\Security;
 use Psr\Http\Message\ResponseInterface;
 use Dflydev\FigCookies\FigRequestCookies;
 use Dflydev\FigCookies\FigResponseCookies;
-use Framework\Auth\Repository\TokenRepositoryInterface;
-use Framework\Auth\Repository\UserRepositoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Framework\Auth\Service\UtilTokenInterface;
+use Framework\Auth\Repository\UserRepositoryInterface;
+use Framework\Auth\Repository\TokenRepositoryInterface;
 
-class RememberMeDatabase implements RememberMeInterface
+class RememberMeDatabase extends RememberMe
 {
-    private $salt = 'pass_phrase';
-
-    /**
-     * Cookie options
-     *
-     * @var array
-     */
-    private $options = [
-        'name' => 'auth_login',
-        'field' => 'username',
-        'expires' => 3600 * 24 * 3,
-        'path' => '/',
-        'domain' => null,
-        'secure' => false,
-        'httpOnly' => false
-    ];
-
-    /**
-     * User Repository
-     * 
-     * @var UserRepositoryInterface
-     */
-    private $userRepository;
 
     /**
      * Token Repository
@@ -45,60 +23,49 @@ class RememberMeDatabase implements RememberMeInterface
      */
     private $tokenRepository;
 
-    /**
-     * Utilitaire de codage et décodage du token
-     *
-     * @var UtilTokenInterface
-     */
-    private $cookieToken;
-
     public function __construct(
     UserRepositoryInterface $userRepository,
-    UtilTokenInterface $cookieToken,
+    UtilTokenInterface $utilToken,
     TokenRepositoryInterface $tokenRepository,
     array $options = []
   ) {
-        $this->userRepository = $userRepository;
-        $this->cookieToken = $cookieToken;
+        parent::__construct($userRepository, $utilToken, array_merge(['password_cookie_name' => 'random_password'], $options));
         $this->tokenRepository = $tokenRepository;
-        if (!empty($options)) {
-            $this->options = array_merge($this->options, $options);
-        }
     }
 
     /**
      *
      * @param ResponseInterface $response
-     * @param string $username
+     * @param string $credential
      * @param string $password
      * @param string $secret
      * @return ResponseInterface
      */
     public function onLogin(
         ResponseInterface $response,
-        string $username,
+        string $credential,
         string $password
     ): ResponseInterface {
-        $expirationCookie = time() + $this->options['expires'];
-        $expirationDate = new \DateTime($expirationCookie);
-
-        $value = $this->cookieToken->getToken($username, $password, $this->salt);
+        $response = parent::onLogin($response, $credential, $password);
+        $expirationDate = date('Y-m-d H:i:s' , $this->expirationDate);
         //['credential', 'random_password', 'expiration_date', 'is_expired']
+        // créé une class Security::randomPassword
+        $randomPassword = Security::randomPassword(24);
         $this->tokenRepository->saveToken(
             [
-                'credential' => $username, 
-                'random_password' => $password, 
+                'credential' => $credential, 
+                'random_password' => $randomPassword, 
                 'expiration_date' => $expirationDate, 
                 'is_expired' => false
             ]
         );
-        $cookie = SetCookie::create($this->options['name'])
-            ->withValue($value)
-            ->withExpires($expirationCookie)
-            ->withPath($this->options['path'])
-            ->withDomain(null)
-            ->withSecure(false)
-            ->withHttpOnly(false);
+        $cookie = SetCookie::create($this->options['password_cookie_name'])
+        ->withValue($randomPassword)
+        ->withExpires($this->expirationDate)
+        ->withPath($this->options['path'])
+        ->withDomain(null)
+        ->withSecure(false)
+        ->withHttpOnly(false);
         return FigResponseCookies::set($response, $cookie);
     }
 
@@ -110,20 +77,15 @@ class RememberMeDatabase implements RememberMeInterface
      */
     public function autoLogin(ServerRequestInterface $request): ?User
     {
-        $cookie = FigRequestCookies::get($request, $this->options['name']);
-        if ($cookie->getValue()) {
-            list($username, $password) = $this->cookieToken->decodeToken($cookie->getValue());
-            $user = $this->userRepository->getUser($this->options['field'], $username);
-            if ($user && $this->cookieToken->validateToken(
-                $cookie->getValue(),
-                $username,
-                $user->getPassword(),
-                $this->salt
-            )) {
-                return $user;
+        $user = parent::autoLogin($request);
+        if ($user) {
+            $getUserField = 'get' . ucfirst($this->options['field']);
+            $dbToken = $this->tokenRepository->getToken($user->$getUserField());
+            if ($dbToken) {
+
             }
         }
-        return null;
+        return $user;
     }
 
     /**
@@ -136,15 +98,19 @@ class RememberMeDatabase implements RememberMeInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            $cookie = SetCookie::create($this->options['name'])
-                ->withValue('')
-                ->withExpires(time() - 3600)
-                ->withPath($this->options['path'])
-                ->withDomain(null)
-                ->withSecure(false)
-                ->withHttpOnly(false);
-            $response = FigResponseCookies::set($response, $cookie);
+            list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
         }
+        $response = parent::onLogout($request, $response);
+        /** @todo create TokenRepositoryInterface::updateToken(array $token) */ 
+        $this->tokenRepository->saveToken(
+            [
+                'credential' => $credential, 
+                'random_password' => '', 
+                'expiration_date' => new \DateTime(-3600), 
+                'is_expired' => true
+            ]
+        );
+
         return $response;
     }
 

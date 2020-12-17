@@ -20,7 +20,7 @@ class RememberMe implements RememberMeInterface
      *
      * @var array
      */
-    private $options = [
+    protected $options = [
         'name' => 'auth_login',
         'field' => 'username',
         'expires' => 3600 * 24 * 3,
@@ -35,45 +35,51 @@ class RememberMe implements RememberMeInterface
      * 
      * @var UserRepositoryInterface
      */
-    private $userRepository;
+    protected $userRepository;
 
     /**
      * Utilitaire de codage et décodage du token
      *
      * @var UtilTokenInterface
      */
-    private $cookieToken;
+    protected $utilToken;
+
+    /**
+     * date d'expiration du cookie variable de travail
+     *
+     * @var int
+     */
+    protected $expirationDate;
 
     public function __construct(
         UserRepositoryInterface $userRepository,
-        UtilTokenInterface $cookieToken,
+        UtilTokenInterface $utilToken,
         array $options = []
     ) {
         $this->userRepository = $userRepository;
-        $this->cookieToken = $cookieToken;
-        if (!empty($options)) {
-            $this->options = array_merge($this->options, $options);
-        }
+        $this->utilToken = $utilToken;
+        $this->setOptions($options);
     }
 
     /**
      *
      * @param ResponseInterface $response
-     * @param string $username
+     * @param string $credential
      * @param string $password
      * @param string $secret
      * @return ResponseInterface
      */
     public function onLogin(
         ResponseInterface $response,
-        string $username,
+        string $credential,
         string $password
     ): ResponseInterface {
-        $value = $this->cookieToken->getToken($username, $password, $this->salt);
+        $value = $this->utilToken->getToken($credential, $password, $this->salt);
 
+        $this->expirationDate = time() + $this->options['expires'];
         $cookie = SetCookie::create($this->options['name'])
             ->withValue($value)
-            ->withExpires(time() + $this->options['expires'])
+            ->withExpires($this->expirationDate)
             ->withPath($this->options['path'])
             ->withDomain(null)
             ->withSecure(false)
@@ -91,11 +97,11 @@ class RememberMe implements RememberMeInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            list($username, $password) = $this->cookieToken->decodeToken($cookie->getValue());
-            $user = $this->userRepository->getUser($this->options['field'], $username);
-            if ($user && $this->cookieToken->validateToken(
+            list($credential, $password) = $this->cookieToken->decodeToken($cookie->getValue());
+            $user = $this->userRepository->getUser($this->options['field'], $credential);
+            if ($user && $this->utilToken->validateToken(
                 $cookie->getValue(),
-                $username,
+                $credential,
                 $user->getPassword(),
                 $this->salt
             )) {
@@ -137,9 +143,10 @@ class RememberMe implements RememberMeInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
+            $this->expirationDate = time() + $this->options['expires'];
             $setCookie = SetCookie::create($this->options['name'])
                 ->withValue($cookie->getValue())
-                ->withExpires(time() + $this->options['expires'])
+                ->withExpires($this->expirationDate)
                 ->withPath($this->options['path'])
                 ->withDomain(null)
                 ->withSecure(false)
@@ -147,5 +154,19 @@ class RememberMe implements RememberMeInterface
             $response = FigResponseCookies::set($response, $setCookie);
         }
         return $response;
+    }
+
+    /**
+     * Modifie le tableau d'options du cookie
+     *
+     * @param array $options
+     * @return RememberMeInterface
+     */
+    public function setOptions(array $options = []): RememberMeInterface
+    {
+        if (!empty($options)) {
+            $this->options = array_merge($this->options, $options);
+        }
+        return $this;
     }
 }
