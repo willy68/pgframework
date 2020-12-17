@@ -3,8 +3,9 @@
 namespace Framework\Auth\RememberMe;
 
 use Framework\Auth\User;
+use Cake\Utility\Security;
+use Dflydev\FigCookies\Cookie;
 use Dflydev\FigCookies\SetCookie;
-use Framework\Auth\Security\Security;
 use Psr\Http\Message\ResponseInterface;
 use Dflydev\FigCookies\FigRequestCookies;
 use Dflydev\FigCookies\FigResponseCookies;
@@ -12,6 +13,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Framework\Auth\Service\UtilTokenInterface;
 use Framework\Auth\Repository\UserRepositoryInterface;
 use Framework\Auth\Repository\TokenRepositoryInterface;
+use RuntimeException;
 
 class RememberMeDatabase extends RememberMe
 {
@@ -24,12 +26,15 @@ class RememberMeDatabase extends RememberMe
     private $tokenRepository;
 
     public function __construct(
-    UserRepositoryInterface $userRepository,
-    UtilTokenInterface $utilToken,
-    TokenRepositoryInterface $tokenRepository,
-    array $options = []
-  ) {
-        parent::__construct($userRepository, $utilToken, array_merge(['password_cookie_name' => 'random_password'], $options));
+        UserRepositoryInterface $userRepository,
+        UtilTokenInterface $utilToken,
+        TokenRepositoryInterface $tokenRepository,
+        array $options = []
+    ) {
+        parent::__construct($userRepository, $utilToken, $options);
+        if (empty($options)) {
+            $this->setOptions(['password_cookie_name' => 'random_password']);
+        }
         $this->tokenRepository = $tokenRepository;
     }
 
@@ -47,25 +52,28 @@ class RememberMeDatabase extends RememberMe
         string $password
     ): ResponseInterface {
         $response = parent::onLogin($response, $credential, $password);
-        $expirationDate = date('Y-m-d H:i:s' , $this->expirationDate);
+        $expirationDate = date('Y-m-d H:i:s', $this->expirationDate);
         //['credential', 'random_password', 'expiration_date', 'is_expired']
-        // créé une class Security::randomPassword
-        $randomPassword = Security::randomPassword(24);
+        $randomPassword = Security::randomString(24);
         $this->tokenRepository->saveToken(
             [
-                'credential' => $credential, 
-                'random_password' => $randomPassword, 
-                'expiration_date' => $expirationDate, 
+                'credential' => $credential,
+                'random_password' => password_hash(
+                    $randomPassword,
+                    PASSWORD_BCRYPT,
+                    ["cost" => 10]
+                ),
+                'expiration_date' => $expirationDate,
                 'is_expired' => false
             ]
         );
         $cookie = SetCookie::create($this->options['password_cookie_name'])
-        ->withValue($randomPassword)
-        ->withExpires($this->expirationDate)
-        ->withPath($this->options['path'])
-        ->withDomain(null)
-        ->withSecure(false)
-        ->withHttpOnly(false);
+            ->withValue($randomPassword)
+            ->withExpires($this->expirationDate)
+            ->withPath($this->options['path'])
+            ->withDomain(null)
+            ->withSecure(false)
+            ->withHttpOnly(false);
         return FigResponseCookies::set($response, $cookie);
     }
 
@@ -80,9 +88,31 @@ class RememberMeDatabase extends RememberMe
         $user = parent::autoLogin($request);
         if ($user) {
             $getUserField = 'get' . ucfirst($this->options['field']);
+            if (!method_exists($user, $getUserField)) {
+                throw new RuntimeException(
+                    "$user class method $getUserField does not exist"
+                );
+            }
             $dbToken = $this->tokenRepository->getToken($user->$getUserField());
-            if ($dbToken) {
-
+            $cookie = FigRequestCookies::get(
+                $request,
+                $this->options['password_cookie_name']
+            );
+            if ($dbToken && $cookie->getValue()) {
+                $setAsExpired = false;
+                //password corrupted
+                if (!password_verify($cookie->getValue(), $dbToken->getRandomPassword())) {
+                    $setAsExpired = true;
+                }
+                // expiration date outdated
+                $expirationDate = date('Y-m-d H:i:s', $this->expirationDate);
+                if ($dbToken->getExpirationDate() < $expirationDate) {
+                    $setAsExpired = true;
+                }
+                if ($setAsExpired) {
+                    $this->tokenRepository->updateToken(['is_expired' => 1], $dbToken->getId()); 
+                    return null;
+                }
             }
         }
         return $user;
@@ -101,12 +131,12 @@ class RememberMeDatabase extends RememberMe
             list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
         }
         $response = parent::onLogout($request, $response);
-        /** @todo create TokenRepositoryInterface::updateToken(array $token) */ 
+        /** @todo create TokenRepositoryInterface::updateToken(array $token, $id) */
         $this->tokenRepository->saveToken(
             [
-                'credential' => $credential, 
-                'random_password' => '', 
-                'expiration_date' => new \DateTime(-3600), 
+                'credential' => $credential,
+                'random_password' => '',
+                'expiration_date' => new \DateTime(-3600),
                 'is_expired' => true
             ]
         );
