@@ -4,7 +4,6 @@ namespace Framework\Auth\RememberMe;
 
 use Framework\Auth\User;
 use Cake\Utility\Security;
-use Dflydev\FigCookies\Cookie;
 use Dflydev\FigCookies\SetCookie;
 use Psr\Http\Message\ResponseInterface;
 use Dflydev\FigCookies\FigRequestCookies;
@@ -25,20 +24,27 @@ class RememberMeDatabase extends RememberMe
      */
     private $tokenRepository;
 
+    /**
+     * Constructeur: ajoute l'option pour le nom du cookie du mot de passe aléatoire
+     *
+     * @param \Framework\Auth\Repository\UserRepositoryInterface $userRepository
+     * @param \Framework\Auth\Service\UtilTokenInterface $utilToken
+     * @param \Framework\Auth\Repository\TokenRepositoryInterface $tokenRepository
+     * @param array $options
+     */
     public function __construct(
         UserRepositoryInterface $userRepository,
         UtilTokenInterface $utilToken,
         TokenRepositoryInterface $tokenRepository,
-        array $options = []
+        array $options = ['password_cookie_name' => 'random_password']
     ) {
         parent::__construct($userRepository, $utilToken, $options);
-        if (empty($options)) {
-            $this->setOptions(['password_cookie_name' => 'random_password']);
-        }
         $this->tokenRepository = $tokenRepository;
     }
 
     /**
+     * Crée un cookie d'authentification,
+     * un token en base données et un cookie avec un mot de passe aléatoire
      *
      * @param ResponseInterface $response
      * @param string $credential
@@ -53,8 +59,8 @@ class RememberMeDatabase extends RememberMe
     ): ResponseInterface {
         $response = parent::onLogin($response, $credential, $password);
         $expirationDate = date('Y-m-d H:i:s', $this->expirationDate);
-        //['credential', 'random_password', 'expiration_date', 'is_expired']
         $randomPassword = Security::randomString(24);
+        //['credential', 'random_password', 'expiration_date', 'is_expired']
         $this->tokenRepository->saveToken(
             [
                 'credential' => $credential,
@@ -78,6 +84,8 @@ class RememberMeDatabase extends RememberMe
     }
 
     /**
+     * Connecte l'utilisateur automatiquement avec le cookie reçu de la requète et 
+     * vérifie le token en base de données s'il est valide
      *
      * @param ServerRequestInterface $request
      * @param string $secret
@@ -99,18 +107,22 @@ class RememberMeDatabase extends RememberMe
                 $this->options['password_cookie_name']
             );
             if ($dbToken && $cookie->getValue()) {
-                $setAsExpired = false;
+                $authenticate = true;
                 //password corrupted
                 if (!password_verify($cookie->getValue(), $dbToken->getRandomPassword())) {
-                    $setAsExpired = true;
+                    $authenticate = false;
                 }
                 // expiration date outdated
-                $expirationDate = date('Y-m-d H:i:s', $this->expirationDate);
-                if ($dbToken->getExpirationDate() < $expirationDate) {
-                    $setAsExpired = true;
+                $this->expirationDate = time() + $this->options['expires'];
+                if ($dbToken->getExpirationDate() < date('Y-m-d H:i:s', $this->expirationDate)) {
+                    $authenticate = false;
                 }
-                if ($setAsExpired) {
-                    $this->tokenRepository->updateToken(['is_expired' => 1], $dbToken->getId()); 
+                // database token marked as expired
+                if ($dbToken->getIsExpired()) {
+                    $authenticate = false;
+                }
+                if (!$authenticate) {
+                    $this->tokenRepository->updateToken(['is_expired' => 1], $dbToken->getId());
                     return null;
                 }
             }
@@ -119,6 +131,8 @@ class RememberMeDatabase extends RememberMe
     }
 
     /**
+     * Déconnecte l'utilisateur et invalide le cookie dans la response et
+     * marque le token en base de données expiré
      *
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
@@ -131,20 +145,15 @@ class RememberMeDatabase extends RememberMe
             list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
         }
         $response = parent::onLogout($request, $response);
-        /** @todo create TokenRepositoryInterface::updateToken(array $token, $id) */
-        $this->tokenRepository->saveToken(
-            [
-                'credential' => $credential,
-                'random_password' => '',
-                'expiration_date' => new \DateTime(-3600),
-                'is_expired' => true
-            ]
-        );
+        $dbToken = $this->tokenRepository->getToken($credential);
+        // Set database token mark as expired
+        $this->tokenRepository->updateToken(['is_expired' => 1], $dbToken->getId());
 
         return $response;
     }
 
     /**
+     * Renouvelle la date d'expiration du cookie dans la response et le token en base de données
      *
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
@@ -152,17 +161,21 @@ class RememberMeDatabase extends RememberMe
      */
     public function resume(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        // Set $this->expirationDate
+        $response = parent::resume($request, $response);
+
+        // Get $credential
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            $setCookie = SetCookie::create($this->options['name'])
-                ->withValue($cookie->getValue())
-                ->withExpires(time() + $this->options['expires'])
-                ->withPath($this->options['path'])
-                ->withDomain(null)
-                ->withSecure(false)
-                ->withHttpOnly(false);
-            $response = FigResponseCookies::set($response, $setCookie);
+            list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
         }
+        $dbToken = $this->tokenRepository->getToken($credential);
+        // Set database token a new expiration_date
+        $this->tokenRepository->updateToken(
+            ['expiration_date' => date('Y-m-d H:i:s', $this->expirationDate)],
+            $dbToken->getId()
+        );
+
         return $response;
     }
 }
