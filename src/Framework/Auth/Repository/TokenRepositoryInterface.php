@@ -10,10 +10,10 @@ interface TokenRepositoryInterface
     /**
      * get cookie token from database or what else
      *
-     * @param string $credential
+     * @param mixed $credential
      * @return \Framework\Auth\TokenInterface|null
      */
-    public function getToken(string $credential): ?TokenInterface;
+    public function getToken($credential): ?TokenInterface;
 
     /**
      * Sauvegarde le token (database, cookie, les deux ou autre)
@@ -22,4 +22,13 @@ interface TokenRepositoryInterface
      * @return TokenInterface|null
      */
     public function saveToken(array $token): ?TokenInterface;
+
+    /**
+     * Mise à jour du token en database
+     *
+     * @param array $token
+     * @param mixed $id
+     * @return TokenInterface|null
+     */
+    public function updateToken(array $token, $id): ?TokenInterface;
 }
