@@ -19,6 +19,10 @@ class App implements RequestHandlerInterface
 {
     use MiddlewareAwareStackTrait;
 
+    const PROXY_DIRECTORY = 'tmp/proxies';
+
+    const COMPILED_CONTAINER_DIRECTORY = 'tmp/di';
+
     /**
      *
      * @var ContainerInterface
@@ -158,8 +162,8 @@ class App implements RequestHandlerInterface
             $builder = new ContainerBuilder();
             $env = getenv('ENV') ?: 'production';
             if ($env === 'production') {
-                $builder->enableCompilation('tmp/di');
-                $builder->writeProxiesToFile(true, 'tmp/proxies');
+                $builder->enableCompilation(self::COMPILED_CONTAINER_DIRECTORY);
+                $builder->writeProxiesToFile(true, self::PROXY_DIRECTORY);
             }
             foreach ($this->config as $config) {
                 $builder->addDefinitions($config);

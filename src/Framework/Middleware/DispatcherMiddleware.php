@@ -2,10 +2,12 @@
 
 namespace Framework\Middleware;
 
+use Framework\App;
 use Framework\Router;
 use Framework\Router\Route;
-use Framework\Router\RouteResult;
 use GuzzleHttp\Psr7\Response;
+use Framework\Router\RouteResult;
+use Framework\Invoker\InvokerFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -192,7 +194,11 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
 
                 if ($this->container instanceof \DI\Container) {
                     $this->container->set(ServerRequestInterface::class, $request);
-                    $response = $this->container->call($callback, $this->route->getParams());
+                    $invokerFactory = new InvokerFactory();
+                    $env = getenv('ENV');
+                    $invoker = $invokerFactory($this->container, ($env === 'production'), App::PROXY_DIRECTORY);
+                    $response = $invoker->call($callback, $this->route->getParams());
+                    //$response = $this->container->call($callback, $this->route->getParams());
                 } else {
                     $response = call_user_func_array($callback, [$request]);
                 }
