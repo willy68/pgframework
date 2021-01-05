@@ -13,6 +13,7 @@ use DI\Definition\Resolver\ResolverDispatcher;
 use Invoker\ParameterResolver\DefaultValueResolver;
 use Invoker\ParameterResolver\NumericArrayResolver;
 use Invoker\ParameterResolver\AssociativeArrayResolver;
+use Framework\Invoker\ParameterResolver\ActiveRecordResolver;
 use Invoker\ParameterResolver\Container\TypeHintContainerResolver;
 
 class InvokerFactory
@@ -36,6 +37,7 @@ class InvokerFactory
         $definitionResolver = new ResolverDispatcher($container, $proxyFactory);
         
         $parameterResolver = new ResolverChain([
+            new ActiveRecordResolver,
             new DefinitionParameterResolver($definitionResolver),
             new NumericArrayResolver,
             new AssociativeArrayResolver,
