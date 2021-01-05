@@ -2,12 +2,12 @@
 
 namespace Framework\Middleware;
 
-use Framework\App;
 use Framework\Router;
 use Framework\Router\Route;
 use GuzzleHttp\Psr7\Response;
 use Framework\Router\RouteResult;
 use Framework\Invoker\InvokerFactory;
+use Invoker\Invoker;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -27,6 +27,13 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
     private $container;
 
     /**
+     * Invoker des callback des routes
+     *
+     * @var Invoker
+     */
+    private $invoker;
+
+    /**
      * Router
      *
      * @var Router
@@ -44,10 +51,12 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
      *
      *
      * @param ContainerInterface $container
+     * @param Invoker $invoker
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, Invoker $invoker)
     {
         $this->container = $container;
+        $this->invoker = $invoker;
     }
 
     /**
@@ -123,7 +132,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                 $router->middleware($middleware);
             }
             /** wrap route callable end */
-            $router->middleware($this->routeCallableMiddleware($route, $this->container));
+            $router->middleware($this->routeCallableMiddleware($route, $this->container, $this->invoker));
         }
     }
 
@@ -132,11 +141,16 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
      *
      * @param Route $route
      * @param ContainerInterface $container
+     * @param Invoker $invoker
      * @return MiddlewareInterface
      */
-    protected function routeCallableMiddleware(Route $route, ContainerInterface $container): MiddlewareInterface
+    protected function routeCallableMiddleware(
+        Route $route,
+        ContainerInterface $container,
+        Invoker $invoker
+    ): MiddlewareInterface
     {
-        return new class ($route, $container) implements MiddlewareInterface
+        return new class ($route, $container, $invoker) implements MiddlewareInterface
         {
             /**
              * Route
@@ -153,14 +167,23 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
             protected $container;
 
             /**
+             * Invoker des callback des route
+             *
+             * @var Invoker
+             */
+            protected $invoker;
+
+            /**
              *  constructor.
              * @param Route $route
              * @param ContainerInterface $container
+             * @param Invoker $invoker
              */
-            public function __construct(Route $route, ContainerInterface $container)
+            public function __construct(Route $route, ContainerInterface $container, Invoker $invoker)
             {
                 $this->route = $route;
                 $this->container = $container;
+                $this->invoker = $invoker;
             }
 
             /**
@@ -176,29 +199,9 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                 
                 $callback = $this->route->getCallback();
 
-                if (is_array($callback) && isset($callback[0]) && is_string($callback[0])) {
-                    $callback = [$this->container->get($callback[0]), $callback[1]];
-                }
-        
-                if (is_string($callback) && method_exists($callback, '__invoke')) {
-                    $callback = $this->container->get($callback);
-                }
-        
-                if (is_string($callback)) {
-                    $callback = $this->container->get($callback);
-                }
-        
-                if (! is_callable($callback)) {
-                    throw new \InvalidArgumentException('Could not resolve a callback for this route');
-                }
-
                 if ($this->container instanceof \DI\Container) {
                     $this->container->set(ServerRequestInterface::class, $request);
-                    $invokerFactory = new InvokerFactory();
-                    $env = getenv('ENV');
-                    $invoker = $invokerFactory($this->container, ($env === 'production'), App::PROXY_DIRECTORY);
-                    $response = $invoker->call($callback, $this->route->getParams());
-                    //$response = $this->container->call($callback, $this->route->getParams());
+                    $response = $this->invoker->call($callback, $this->route->getParams());
                 } else {
                     $response = call_user_func_array($callback, [$request]);
                 }

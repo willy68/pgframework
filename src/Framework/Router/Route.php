@@ -94,17 +94,7 @@ class Route
      */
     public function getCallback()
     {
-        $callback = $this->callback;
-
-        if (is_string($callback) && strpos($callback, '::') !== false) {
-            $callback = explode('::', $callback, 2);
-        }
-
-        if (is_array($callback) && isset($callback[0]) && is_object($callback[0])) {
-            $callback = [$callback[0], $callback[1]];
-        }
-
-        return $callback;
+        return $this->callback;
     }
 
     /**

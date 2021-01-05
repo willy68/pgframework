@@ -21,6 +21,7 @@ use Framework\Session\SessionInterface;
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
 use Framework\ActiveRecord\ActiveRecordFactory;
+use Framework\Invoker\InvokerFactory;
 use Framework\Validator\Filter\StriptagsFilter;
 use Framework\Validator\Filter\TrimFilter;
 use Framework\Validator\Validation\{
@@ -38,6 +39,7 @@ use Framework\Validator\Validation\{
     UploadedValidation,
     NotEmptyValidation
 };
+use Invoker\Invoker;
 use Tuupola\Middleware\JwtAuthentication;
 
 use function DI\create;
@@ -81,6 +83,7 @@ return [
     CsrfMiddleware::class =>
     create()->constructor(get(SessionInterface::class)),
     JwtAuthentication::class => factory(JwtMiddlewareFactory::class),
+    Invoker::class => factory(InvokerFactory::class),
     Router::class => factory(RouterFactory::class),
     RendererInterface::class => factory(TwigRendererFactory::class),
     Whoops::class => function (ContainerInterface $c) {
