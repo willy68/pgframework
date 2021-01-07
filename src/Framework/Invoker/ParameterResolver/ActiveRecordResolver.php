@@ -2,8 +2,9 @@
 
 namespace Framework\Invoker\ParameterResolver;
 
-use ReflectionFunctionAbstract;
 use ReflectionNamedType;
+use ReflectionParameter;
+use ReflectionFunctionAbstract;
 use Invoker\ParameterResolver\ParameterResolver;
 
 /**
@@ -55,8 +56,8 @@ class ActiveRecordResolver implements ParameterResolver
             $id = $this->alias ?: $this->id;
 
             if ($key === $id) {
-                /** @var \ReflectionParameter $reflectionParameter */
                 foreach($reflectionParameters as $index => $reflectionParameter) {
+                    /** @var ReflectionParameter $reflectionParameter */
                     $parameterType = $reflectionParameter->getType();
 
                     if (!$parameterType) {

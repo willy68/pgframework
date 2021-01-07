@@ -222,6 +222,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
             {
                 if (!$this->invoker) {
                     $parameterResolver = new ResolverChain([
+                    //new ActiveRecordAnnotationResolver,
                     new ActiveRecordResolver,
                     new NumericArrayResolver,
                     new AssociativeArrayResolver,
