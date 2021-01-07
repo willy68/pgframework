@@ -2,17 +2,23 @@
 
 namespace Framework\Middleware;
 
+use Invoker\Invoker;
+use Invoker\InvokerInterface;
 use Framework\Router;
 use Framework\Router\Route;
 use GuzzleHttp\Psr7\Response;
 use Framework\Router\RouteResult;
-use Framework\Invoker\InvokerFactory;
-use Invoker\Invoker;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use Invoker\ParameterResolver\ResolverChain;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Invoker\ParameterResolver\DefaultValueResolver;
+use Invoker\ParameterResolver\NumericArrayResolver;
+use Invoker\ParameterResolver\AssociativeArrayResolver;
+use Framework\Invoker\ParameterResolver\ActiveRecordResolver;
+use Invoker\ParameterResolver\Container\TypeHintContainerResolver;
 
 /**
  * Undocumented class
@@ -25,13 +31,6 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
      * @var ContainerInterface
      */
     private $container;
-
-    /**
-     * Invoker des callback des routes
-     *
-     * @var Invoker
-     */
-    private $invoker;
 
     /**
      * Router
@@ -53,10 +52,9 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
      * @param ContainerInterface $container
      * @param Invoker $invoker
      */
-    public function __construct(ContainerInterface $container, Invoker $invoker)
+    public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->invoker = $invoker;
     }
 
     /**
@@ -132,7 +130,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                 $router->middleware($middleware);
             }
             /** wrap route callable end */
-            $router->middleware($this->routeCallableMiddleware($route, $this->container, $this->invoker));
+            $router->middleware($this->routeCallableMiddleware($route, $this->container));
         }
     }
 
@@ -146,11 +144,10 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
      */
     protected function routeCallableMiddleware(
         Route $route,
-        ContainerInterface $container,
-        Invoker $invoker
+        ContainerInterface $container
     ): MiddlewareInterface
     {
-        return new class ($route, $container, $invoker) implements MiddlewareInterface
+        return new class ($route, $container) implements MiddlewareInterface
         {
             /**
              * Route
@@ -179,11 +176,10 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
              * @param ContainerInterface $container
              * @param Invoker $invoker
              */
-            public function __construct(Route $route, ContainerInterface $container, Invoker $invoker)
+            public function __construct(Route $route, ContainerInterface $container)
             {
                 $this->route = $route;
                 $this->container = $container;
-                $this->invoker = $invoker;
             }
 
             /**
@@ -201,7 +197,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
 
                 if ($this->container instanceof \DI\Container) {
                     $this->container->set(ServerRequestInterface::class, $request);
-                    $response = $this->invoker->call($callback, $this->route->getParams());
+                    $response = $this->getInvoker($this->container)->call($callback, $this->route->getParams());
                 } else {
                     $response = call_user_func_array($callback, [$request]);
                 }
@@ -214,6 +210,27 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
                     throw new \Exception('The response is not a string or a ResponseInterface');
                 }
                 return $requestHandler->handle($request);
+            }
+
+            /**
+             * crée un Invoker
+             *
+             * @param \Psr\Container\ContainerInterface $container
+             * @return InvokerInterface
+             */
+            public function getInvoker(ContainerInterface $container): InvokerInterface
+            {
+                if (!$this->invoker) {
+                    $parameterResolver = new ResolverChain([
+                    new ActiveRecordResolver,
+                    new NumericArrayResolver,
+                    new AssociativeArrayResolver,
+                    new DefaultValueResolver,
+                    new TypeHintContainerResolver($container)
+                ]);
+                    $this->invoker = new Invoker($parameterResolver, $container);
+                }
+                return $this->invoker;
             }
         };
     }
