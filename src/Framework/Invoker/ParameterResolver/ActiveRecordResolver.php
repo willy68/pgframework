@@ -3,10 +3,41 @@
 namespace Framework\Invoker\ParameterResolver;
 
 use ReflectionFunctionAbstract;
+use ReflectionNamedType;
 use Invoker\ParameterResolver\ParameterResolver;
 
+/**
+ * Subtitue un paramètre $id d'une route
+ * par le model ActiveRecord attendu par la fonction
+ */
 class ActiveRecordResolver implements ParameterResolver
 {
+
+    /**
+     * nom du champ id par défaut id
+     *
+     * @var string
+     */
+    private $id = 'id';
+
+    /**
+     * Alias pour le champ $id par défaut null
+     *
+     * @var string|null Si non null sera utilsé à la place de $id
+     */
+    private $alias;
+
+    /**
+     * Constructor
+     *
+     * @param string $key
+     * @param string|null $alias
+     */
+    public function __construct(?string $alias = null)
+    {
+        $this->alias = $alias;
+    }
+
     public function getParameters(
         ReflectionFunctionAbstract $reflection,
         array $providedParameters,
@@ -15,35 +46,42 @@ class ActiveRecordResolver implements ParameterResolver
         /** @var \ReflectionParameter[] $reflectionParameters */
         $reflectionParameters = $reflection->getParameters();
 
-        // Skip parameters already resolved
-        if (! empty($resolvedParameters)) {
-            $providedParameters = array_diff_key($providedParameters, $resolvedParameters);
-        }
-
         foreach($providedParameters as $key => $parameter) {
 
             if (is_int($key)) {
                 continue;
             }
 
-            if ($key === 'id') {
+            $id = $this->alias ?: $this->id;
+
+            if ($key === $id) {
                 /** @var \ReflectionParameter $reflectionParameter */
                 foreach($reflectionParameters as $index => $reflectionParameter) {
-                    $class = $reflectionParameter->getType();
+                    $parameterType = $reflectionParameter->getType();
 
-                    if ($class instanceof \ReflectionNamedType) {
-                        $class = $class->getName();
-
-                        if (class_exists($class) && in_array(\ActiveRecord\Model::class, class_parents($class))) {
-                            $obj = $class::find($parameter);
-                            $resolvedParameters[$index] = $obj;
-                        }
+                    if (!$parameterType) {
+                        // No type
+                        continue;
+                    }
+                    /** @var ReflectionNamedType $parameterType */
+                    if ($parameterType->isBuiltin()) {
+                        // Primitive types are not supported
+                        continue;
+                    }
+                    if (!$parameterType instanceof ReflectionNamedType) {
+                        // Union types are not supported
+                        continue;
                     }
 
+                    $class = $parameterType->getName();
+
+                    if (class_exists($class) && in_array(\ActiveRecord\Model::class, class_parents($class))) {
+                        $obj = $class::find($parameter);
+                        $resolvedParameters[$index] = $obj;
+                    }
                 }
             }
         }
-
         return $resolvedParameters;
     }
 }

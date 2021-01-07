@@ -2,14 +2,10 @@
 
 namespace Framework\Invoker;
 
-use Framework\App;
 use Invoker\Invoker;
-use DI\Proxy\ProxyFactory;
 use Invoker\InvokerInterface;
 use Psr\Container\ContainerInterface;
-use DI\Invoker\DefinitionParameterResolver;
 use Invoker\ParameterResolver\ResolverChain;
-use DI\Definition\Resolver\ResolverDispatcher;
 use Invoker\ParameterResolver\DefaultValueResolver;
 use Invoker\ParameterResolver\NumericArrayResolver;
 use Invoker\ParameterResolver\AssociativeArrayResolver;
@@ -27,7 +23,7 @@ class InvokerFactory
      */
     public function __invoke(ContainerInterface $container): InvokerInterface
     {
-        $writeProxiesToFile = ($container->get('env') === 'production');
+        /*$writeProxiesToFile = ($container->get('env') === 'production');
 
         $proxyFactory = new ProxyFactory(
             $writeProxiesToFile,
@@ -35,14 +31,15 @@ class InvokerFactory
         );
 
         $definitionResolver = new ResolverDispatcher($container, $proxyFactory);
-        
+        */
         $parameterResolver = new ResolverChain([
+            //new DefinitionParameterResolver($definitionResolver),
+            // Must before TypeHintContainerResolver
             new ActiveRecordResolver,
-            new DefinitionParameterResolver($definitionResolver),
             new NumericArrayResolver,
             new AssociativeArrayResolver,
             new DefaultValueResolver,
-            new TypeHintContainerResolver($container),
+            new TypeHintContainerResolver($container)
         ]);
 
         return new Invoker($parameterResolver, $container);

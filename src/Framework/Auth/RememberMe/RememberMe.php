@@ -97,7 +97,7 @@ class RememberMe implements RememberMeInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            list($credential, $password) = $this->cookieToken->decodeToken($cookie->getValue());
+            list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
             $user = $this->userRepository->getUser($this->options['field'], $credential);
             if ($user && $this->utilToken->validateToken(
                 $cookie->getValue(),
