@@ -17,14 +17,15 @@
         "pagerfanta/pagerfanta": "^2.1",
         "grafikart/psr15-csrf-middleware": "^1.0",
         "intervention/image": "^2.5",
-        "doctrine/annotations": "^1.8",
+        "doctrine/annotations": "^1.11",
         "dflydev/fig-cookies": "^2.0",
         "tuupola/slim-jwt-auth": "^3.4",
         "willy68/php-activerecord-dev": "^1.2",
         "ext-json": "*",
         "ext-pdo": "*",
         "symfony/dotenv": "^5.0",
-        "cakephp/utility": "^4.1"
+        "cakephp/utility": "^4.1",
+        "php-di/invoker": "^2.2"
     },
     "autoload": {
         "psr-4": {
