@@ -11,7 +11,6 @@ use Framework\Invoker\Exception\InvalidAnnotation;
  * 
  * First param is the method parameter to convert from route param
  * ``` 
- * Ex @ParameterConverter("post", options={"className"="Namespace\Post", "id"="post_id"})
  * Ex @ParameterConverter("post", options={"id"="post_id"})
  * ```
  * 
@@ -49,14 +48,6 @@ final class ParameterConverter
         // @ParameterConverter({...}) on a method
         if (is_array($values)) {
             foreach ($values as $key => $value) {
-                /*
-                if (! is_string($value)) {
-                    throw new InvalidAnnotation(sprintf(
-                        '@ParameterConverter({name = "value"}) expects "value" to be a string, %s given.',
-                        json_encode($value)
-                    ));
-                }*/
-
                 $this->parameters[$key] = $value;
             }
         }

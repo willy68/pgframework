@@ -8,7 +8,7 @@ use ReflectionParameter;
 use ReflectionFunctionAbstract;
 use Invoker\ParameterResolver\ParameterResolver;
 
-class ActiveRecordConverter implements ParameterResolver
+class ActiveRecordAnnotationConverter implements ParameterResolver
 {
     /**
      * Nom du paramètre de la methode à injecter
@@ -16,20 +16,6 @@ class ActiveRecordConverter implements ParameterResolver
      * @var string
      */
     private $methodParam;
-
-    /**
-     * Nom de l'ID comme paramètre, peut-être null
-     *
-     * @var string
-     */
-    private $id;
-
-    /**
-     * Nom du Slug comme paramètre, peut-être null
-     *
-     * @var string
-     */
-    private $slug;
 
     /**
      * Other field to find Record
@@ -41,16 +27,7 @@ class ActiveRecordConverter implements ParameterResolver
     public function __construct(string $methodParam, array $findBy)
     {
         $this->methodParam = $methodParam;
-        if (isset($findBy['id'])) {
-            $this->id = $findBy['id'];
-        }
-        elseif (isset($findBy['slug'])) {
-            $this->slug = $findBy['slug'];
-        }
-        else {
-            $this->findBy = $findBy;
-        }
-        
+        $this->findBy = $findBy;
     }
 
     public function getParameters(
@@ -60,7 +37,7 @@ class ActiveRecordConverter implements ParameterResolver
     ): array
     {
 
-        if (is_null($this->id) && is_null($this->slug)) {
+        if (empty($this->findBy)) {
             return $resolvedParameters;
         }
 
@@ -77,9 +54,9 @@ class ActiveRecordConverter implements ParameterResolver
                 continue;
             }
 
-            $findBy = $this->id ?: $this->slug;
+            $findByKey = array_key_first($this->findBy);
 
-            if ($key === $findBy) {
+            if ($key === $this->findBy[$findByKey]) {
                 /** @var ReflectionParameter[] $reflectionParameters */
                 foreach($reflectionParameters as $index => $reflectionParameter) {
                     $name = $reflectionParameter->getName();
@@ -104,18 +81,16 @@ class ActiveRecordConverter implements ParameterResolver
                         $class = $parameterType->getName();
 
                         if (class_exists($class) && in_array(\ActiveRecord\Model::class, class_parents($class))) {
-                            if ($this->id) {
+                            if ($findByKey === 'id') {
                                 $obj = $class::find((int) $parameter);
                             }
-                            elseif ($this->slug) {
-                                $method = "find_by_slug";
+                            else {
+                                $method = "find_by_" . $findByKey;
                                 $obj = $class::$method($parameter);
                                 if (!$obj) {
                                     throw new RecordNotFound("Couldn't find $class with slug=$this->slug");
                                 }
                             }
-                            // todo Other findBy method
-                            
                             $resolvedParameters[$index] = $obj;
                         }
                     }

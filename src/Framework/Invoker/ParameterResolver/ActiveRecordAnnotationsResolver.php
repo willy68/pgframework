@@ -3,15 +3,14 @@
 namespace Framework\Invoker\ParameterResolver;
 
 use ReflectionMethod;
-use ReflectionNamedType;
 use ReflectionParameter;
-use PhpDocReader\PhpDocReader;
 use ReflectionFunctionAbstract;
 use Invoker\ParameterResolver\ParameterResolver;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Framework\Invoker\Exception\InvalidAnnotation;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Framework\Invoker\Annotation\ParameterConverter;
+use Framework\Invoker\ParameterResolver\ActiveRecordAnnotationConverter;
 
 class ActiveRecordAnnotationsResolver implements ParameterResolver
 {
@@ -77,18 +76,6 @@ class ActiveRecordAnnotationsResolver implements ParameterResolver
     }
 
     /**
-     * @return PhpDocReader
-     */
-    private function getPhpDocReader(): PhpDocReader
-    {
-        if ($this->phpDocReader === null) {
-            $this->phpDocReader = new PhpDocReader($this->ignorePhpDocErrors);
-        }
-
-        return $this->phpDocReader;
-    }
-
-    /**
      * Get annotation method
      *
      * @param \ReflectionMethod $method
@@ -132,7 +119,10 @@ class ActiveRecordAnnotationsResolver implements ParameterResolver
                     $method->getName()
                 ));
             }
-            $this->converters[] = new ActiveRecordConverter($annotationParams['value'], $annotationParams['options']);
+            $this->converters[] = new ActiveRecordAnnotationConverter(
+                $annotationParams['value'],
+                $annotationParams['options']
+            );
         }
 	}
 }
