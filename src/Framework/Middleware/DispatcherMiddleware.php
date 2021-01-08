@@ -3,10 +3,10 @@
 namespace Framework\Middleware;
 
 use Invoker\Invoker;
-use Invoker\InvokerInterface;
 use Framework\Router;
 use Framework\Router\Route;
 use GuzzleHttp\Psr7\Response;
+use Invoker\InvokerInterface;
 use Framework\Router\RouteResult;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -19,6 +19,7 @@ use Invoker\ParameterResolver\NumericArrayResolver;
 use Invoker\ParameterResolver\AssociativeArrayResolver;
 use Framework\Invoker\ParameterResolver\ActiveRecordResolver;
 use Invoker\ParameterResolver\Container\TypeHintContainerResolver;
+use Framework\Invoker\ParameterResolver\ActiveRecordAnnotationsResolver;
 
 /**
  * Undocumented class
@@ -222,7 +223,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
             {
                 if (!$this->invoker) {
                     $parameterResolver = new ResolverChain([
-                    //new ActiveRecordAnnotationResolver,
+                    new ActiveRecordAnnotationsResolver,
                     new ActiveRecordResolver,
                     new NumericArrayResolver,
                     new AssociativeArrayResolver,

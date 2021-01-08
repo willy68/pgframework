@@ -46,6 +46,10 @@ class ActiveRecordResolver implements ParameterResolver
     ): array {
         /** @var \ReflectionParameter[] $reflectionParameters */
         $reflectionParameters = $reflection->getParameters();
+        // Skip parameters already resolved
+        if (! empty($resolvedParameters)) {
+            $reflectionParameters = array_diff_key($reflectionParameters, $resolvedParameters);
+        }
 
         foreach($providedParameters as $key => $parameter) {
 
