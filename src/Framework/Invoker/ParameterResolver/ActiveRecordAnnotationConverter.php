@@ -85,7 +85,7 @@ class ActiveRecordAnnotationConverter implements ParameterResolver
                                 $method = "find_by_" . $findByKey;
                                 $obj = $class::$method($parameter);
                                 if (!$obj) {
-                                    throw new RecordNotFound("Couldn't find $class with slug=$this->slug");
+                                    throw new RecordNotFound("Couldn't find $class with $findByKey=$parameter");
                                 }
                             }
                             $resolvedParameters[$index] = $obj;
