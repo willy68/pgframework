@@ -84,7 +84,7 @@ class RememberMeDatabase extends RememberMe
     }
 
     /**
-     * Connecte l'utilisateur automatiquement avec le cookie reçu de la requète et 
+     * Connecte l'utilisateur automatiquement avec le cookie reçu de la requète et
      * vérifie le token en base de données s'il est valide
      *
      * @param ServerRequestInterface $request
@@ -138,7 +138,7 @@ class RememberMeDatabase extends RememberMe
      * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function onLogout(ServerRequestInterface $request,  ResponseInterface $response): ResponseInterface
+    public function onLogout(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {

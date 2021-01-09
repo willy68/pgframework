@@ -20,21 +20,21 @@ class AuthSession implements Auth
     ];
 
     /**
-     * 
+     *
      *
      * @var SessionInterface
      */
     private $session;
 
     /**
-     * 
+     *
      *
      * @var User
      */
     private $user;
 
     /**
-     * 
+     *
      *
      * @var UserRepositoryInterface
      */
@@ -44,8 +44,7 @@ class AuthSession implements Auth
         SessionInterface $session,
         UserRepositoryInterface $userRepository,
         array $options = []
-    )
-    {
+    ) {
         $this->session = $session;
         $this->userRepository = $userRepository;
         if (!empty($options)) {
@@ -100,11 +99,11 @@ class AuthSession implements Auth
                 return null;
             }
         }
-        return null;    
+        return null;
     }
 
     /**
-     * 
+     *
      * @param User $user
      * @return Auth
      */

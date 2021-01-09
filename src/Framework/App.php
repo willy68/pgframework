@@ -19,9 +19,9 @@ class App implements RequestHandlerInterface
 {
     use MiddlewareAwareStackTrait;
 
-    const PROXY_DIRECTORY = 'tmp/proxies';
+    public const PROXY_DIRECTORY = 'tmp/proxies';
 
-    const COMPILED_CONTAINER_DIRECTORY = 'tmp/di';
+    public const COMPILED_CONTAINER_DIRECTORY = 'tmp/di';
 
     /**
      *

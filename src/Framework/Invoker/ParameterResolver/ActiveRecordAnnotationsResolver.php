@@ -49,7 +49,7 @@ class ActiveRecordAnnotationsResolver implements ParameterResolver
             $reflectionParameters = array_diff_key($reflectionParameters, $resolvedParameters);
         }
 
-        foreach($this->converters as $converter) {
+        foreach ($this->converters as $converter) {
             $resolvedParameters = $converter->getParameters($reflection, $providedParameters, $resolvedParameters);
 
             $diff = array_diff_key($reflectionParameters, $resolvedParameters);
@@ -86,10 +86,10 @@ class ActiveRecordAnnotationsResolver implements ParameterResolver
         // Look for @ParameterConverter annotation
         try {
             $annotation = $this->getAnnotationReader()
-                            ->getMethodAnnotations(
-                                $method,
-                                ParameterConverter::class
-                            );
+                ->getMethodAnnotations(
+                    $method,
+                    ParameterConverter::class
+                );
         } catch (InvalidAnnotation $e) {
             throw new InvalidAnnotation(sprintf(
                 '@ParameterConverter annotation on %s::%s is malformed. %s',
@@ -108,9 +108,9 @@ class ActiveRecordAnnotationsResolver implements ParameterResolver
      * @param \ReflectionMethod $method
      * @return void
      */
-	protected function parseAnnotation(array $annotations, ReflectionMethod $method): void
-	{
-        foreach($annotations as $annotation) {
+    protected function parseAnnotation(array $annotations, ReflectionMethod $method): void
+    {
+        foreach ($annotations as $annotation) {
             $annotationParams = $annotation->getParameters();
             if (!isset($annotationParams["value"]) || !isset($annotationParams["options"])) {
                 throw new InvalidAnnotation(sprintf(
@@ -124,5 +124,5 @@ class ActiveRecordAnnotationsResolver implements ParameterResolver
                 $annotationParams['options']
             );
         }
-	}
+    }
 }

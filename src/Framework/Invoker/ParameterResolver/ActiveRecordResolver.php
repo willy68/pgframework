@@ -47,12 +47,11 @@ class ActiveRecordResolver implements ParameterResolver
         /** @var \ReflectionParameter[] $reflectionParameters */
         $reflectionParameters = $reflection->getParameters();
         // Skip parameters already resolved
-        if (! empty($resolvedParameters)) {
+        if (!empty($resolvedParameters)) {
             $reflectionParameters = array_diff_key($reflectionParameters, $resolvedParameters);
         }
 
-        foreach($providedParameters as $key => $parameter) {
-
+        foreach ($providedParameters as $key => $parameter) {
             if (is_int($key)) {
                 continue;
             }
@@ -60,7 +59,7 @@ class ActiveRecordResolver implements ParameterResolver
             $id = $this->alias ?: $this->id;
 
             if ($key === $id) {
-                foreach($reflectionParameters as $index => $reflectionParameter) {
+                foreach ($reflectionParameters as $index => $reflectionParameter) {
                     /** @var ReflectionParameter $reflectionParameter */
                     $parameterType = $reflectionParameter->getType();
 

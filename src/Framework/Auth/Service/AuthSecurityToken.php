@@ -4,18 +4,16 @@ namespace Framework\Auth\Service;
 
 class AuthSecurityToken
 {
-    const SEPARATOR = ':';
+    public const SEPARATOR = ':';
 
     public static function generateSecurityToken(
         string $username,
         string $password,
         string $security
-    ): string
-    {
+    ): string {
         $password = hash_hmac('sha256', $username . $password, $security);
         $username = base64_encode($username);
         return $username . self::SEPARATOR . $password;
-
     }
 
     public static function decodeSecurityToken(string $token): array
@@ -30,8 +28,7 @@ class AuthSecurityToken
         string $username,
         string $password,
         string $security
-    ): bool
-    {
+    ): bool {
         $passwordToVerify = hash_hmac('sha256', $username . $password, $security);
         list($usernameOrigin, $passwordOrigin) = self::decodeSecurityToken($token);
         if (

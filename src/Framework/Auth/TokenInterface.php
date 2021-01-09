@@ -6,14 +6,14 @@ interface TokenInterface
 {
     /**
      * get token id
-     * 
+     *
      * @return int
      */
     public function getId(): int;
 
     /**
      * get the unique user credential (ex. username or email)
-     * 
+     *
      * @return string
      */
     public function getCredential(): string;

@@ -17,7 +17,7 @@ class RequiredValidation implements ValidationInterface
 
     public function isValid($var): bool
     {
-        return $this->is_set($var);
+        return $this->isSet($var);
     }
 
     public function parseParams($param): self
@@ -49,7 +49,7 @@ class RequiredValidation implements ValidationInterface
      * @param string $var The POST variable to check
      * @return bool
      */
-    protected function is_set($var): bool
+    protected function isSet($var): bool
     {
         $check = true;
         if (!isset($var)) {

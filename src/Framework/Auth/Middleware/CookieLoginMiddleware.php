@@ -19,7 +19,7 @@ class CookieLoginMiddleware implements MiddlewareInterface
     private $auth;
 
     /**
-     * 
+     *
      *
      * @var RememberMeInterface
      */
@@ -45,5 +45,4 @@ class CookieLoginMiddleware implements MiddlewareInterface
         $response = $handler->handle($request);
         return $this->cookie->resume($request, $response);
     }
-
 }

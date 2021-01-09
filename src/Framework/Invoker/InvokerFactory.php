@@ -35,10 +35,10 @@ class InvokerFactory
         $parameterResolver = new ResolverChain([
             //new DefinitionParameterResolver($definitionResolver),
             // Must before TypeHintContainerResolver
-            new ActiveRecordResolver,
-            new NumericArrayResolver,
-            new AssociativeArrayResolver,
-            new DefaultValueResolver,
+            new ActiveRecordResolver(),
+            new NumericArrayResolver(),
+            new AssociativeArrayResolver(),
+            new DefaultValueResolver(),
             new TypeHintContainerResolver($container)
         ]);
 

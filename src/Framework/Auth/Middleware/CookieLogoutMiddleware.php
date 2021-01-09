@@ -18,7 +18,7 @@ class CookieLogoutMiddleware implements MiddlewareInterface
     private $auth;
 
     /**
-     * 
+     *
      *
      * @var RememberMeInterface
      */

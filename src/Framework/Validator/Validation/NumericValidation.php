@@ -61,7 +61,7 @@ class NumericValidation implements ValidationInterface
 
     protected function checkNumeric($var): bool
     {
-        if (($val = $this->get_numeric($var)) !== null) {
+        if (($val = $this->getNumeric($var)) !== null) {
             $options = array();
             if (!empty($this->min)) {
                 $options['options']['min_range'] = $this->min;
@@ -79,17 +79,17 @@ class NumericValidation implements ValidationInterface
 
     public function setMin($min = 1): self
     {
-        $this->min = $this->get_numeric($min);
+        $this->min = $this->getNumeric($min);
         return $this;
     }
 
     public function setMax($max = 255): self
     {
-        $this->max = $this->get_numeric($max);
+        $this->max = $this->getNumeric($max);
         return $this;
     }
 
-    protected function get_numeric($val)
+    protected function getNumeric($val)
     {
         if (is_numeric($val)) {
             return $val + 0;

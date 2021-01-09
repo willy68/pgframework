@@ -15,7 +15,7 @@ abstract class AbstractFilter
      * @return bool
      *
      */
-    protected function is_set(string $var): bool
+    protected function isSet(string $var): bool
     {
         return (bool)(isset($var) && strlen($var));
     }

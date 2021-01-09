@@ -32,10 +32,9 @@ class ActiveRecordAnnotationConverter implements ParameterResolver
 
     public function getParameters(
         ReflectionFunctionAbstract $reflection,
-        array $providedParameters, 
+        array $providedParameters,
         array $resolvedParameters
-    ): array
-    {
+    ): array {
 
         if (empty($this->findBy)) {
             return $resolvedParameters;
@@ -44,12 +43,11 @@ class ActiveRecordAnnotationConverter implements ParameterResolver
         /** @var \ReflectionParameter[] $reflectionParameters */
         $reflectionParameters = $reflection->getParameters();
         // Skip parameters already resolved
-        if (! empty($resolvedParameters)) {
+        if (!empty($resolvedParameters)) {
             $reflectionParameters = array_diff_key($reflectionParameters, $resolvedParameters);
         }
 
-        foreach($providedParameters as $key => $parameter) {
-
+        foreach ($providedParameters as $key => $parameter) {
             if (is_int($key)) {
                 continue;
             }
@@ -58,7 +56,7 @@ class ActiveRecordAnnotationConverter implements ParameterResolver
 
             if ($key === $this->findBy[$findByKey]) {
                 /** @var ReflectionParameter[] $reflectionParameters */
-                foreach($reflectionParameters as $index => $reflectionParameter) {
+                foreach ($reflectionParameters as $index => $reflectionParameter) {
                     $name = $reflectionParameter->getName();
 
                     if ($name === $this->methodParam) {
@@ -83,8 +81,7 @@ class ActiveRecordAnnotationConverter implements ParameterResolver
                         if (class_exists($class) && in_array(\ActiveRecord\Model::class, class_parents($class))) {
                             if ($findByKey === 'id') {
                                 $obj = $class::find((int) $parameter);
-                            }
-                            else {
+                            } else {
                                 $method = "find_by_" . $findByKey;
                                 $obj = $class::$method($parameter);
                                 if (!$obj) {

@@ -17,7 +17,7 @@ class NotEmptyValidation implements ValidationInterface
 
     public function isValid($var): bool
     {
-        return $this->is_NotEmpty($var);
+        return $this->isNotEmpty($var);
     }
 
     /**
@@ -29,7 +29,7 @@ class NotEmptyValidation implements ValidationInterface
      * @param string $var The POST variable to check
      *
      */
-    protected function is_NotEmpty($var): bool
+    protected function isNotEmpty($var): bool
     {
         $check = true;
         if (!isset($var)) {

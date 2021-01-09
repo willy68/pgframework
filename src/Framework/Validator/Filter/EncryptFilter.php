@@ -7,9 +7,9 @@ use Framework\Validator\FilterInterface;
 class EncryptFilter extends AbstractFilter implements FilterInterface
 {
 
-    const MD5 = 'MD5';
+    public const MD5 = 'MD5';
 
-    const CUSTOM = 'CUSTOM';
+    public const CUSTOM = 'CUSTOM';
 
     protected $method = self::MD5;
 
@@ -41,7 +41,7 @@ class EncryptFilter extends AbstractFilter implements FilterInterface
      */
     public function filter($var)
     {
-        if ($this->is_set($var)) {
+        if ($this->isSet($var)) {
             switch ($this->method) {
                 case self::MD5:
                     return md5($var);

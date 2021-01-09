@@ -146,8 +146,7 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
     protected function routeCallableMiddleware(
         Route $route,
         ContainerInterface $container
-    ): MiddlewareInterface
-    {
+    ): MiddlewareInterface {
         return new class ($route, $container) implements MiddlewareInterface
         {
             /**
@@ -223,13 +222,13 @@ class DispatcherMiddleware implements MiddlewareInterface, RequestHandlerInterfa
             {
                 if (!$this->invoker) {
                     $parameterResolver = new ResolverChain([
-                    new ActiveRecordAnnotationsResolver,
-                    new ActiveRecordResolver,
-                    new NumericArrayResolver,
-                    new AssociativeArrayResolver,
-                    new DefaultValueResolver,
+                    new ActiveRecordAnnotationsResolver(),
+                    new ActiveRecordResolver(),
+                    new NumericArrayResolver(),
+                    new AssociativeArrayResolver(),
+                    new DefaultValueResolver(),
                     new TypeHintContainerResolver($container)
-                ]);
+                    ]);
                     $this->invoker = new Invoker($parameterResolver, $container);
                 }
                 return $this->invoker;

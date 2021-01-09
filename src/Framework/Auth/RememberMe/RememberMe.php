@@ -32,7 +32,7 @@ class RememberMe implements RememberMeInterface
 
     /**
      * User Repository
-     * 
+     *
      * @var UserRepositoryInterface
      */
     protected $userRepository;
@@ -99,12 +99,14 @@ class RememberMe implements RememberMeInterface
         if ($cookie->getValue()) {
             list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
             $user = $this->userRepository->getUser($this->options['field'], $credential);
-            if ($user && $this->utilToken->validateToken(
-                $cookie->getValue(),
-                $credential,
-                $user->getPassword(),
-                $this->salt
-            )) {
+            if (
+                $user && $this->utilToken->validateToken(
+                    $cookie->getValue(),
+                    $credential,
+                    $user->getPassword(),
+                    $this->salt
+                )
+            ) {
                 return $user;
             }
         }
@@ -117,7 +119,7 @@ class RememberMe implements RememberMeInterface
      * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function onLogout(ServerRequestInterface $request,  ResponseInterface $response): ResponseInterface
+    public function onLogout(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {

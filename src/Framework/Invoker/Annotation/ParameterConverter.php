@@ -8,12 +8,12 @@ use Framework\Invoker\Exception\InvalidAnnotation;
  * "ParameterConverter" annotation.
  *
  * Marks a method as an injection point
- * 
+ *
  * First param is the method parameter to convert from route param
- * ``` 
+ * ```
  * Ex @ParameterConverter("post", options={"id"="post_id"})
  * ```
- * 
+ *
  * @api
  *
  * @Annotation
@@ -56,7 +56,7 @@ final class ParameterConverter
     /**
      * @return array Parameters, indexed by the parameter number (index) or name
      */
-    public function getParameters() : array
+    public function getParameters(): array
     {
         return $this->parameters;
     }

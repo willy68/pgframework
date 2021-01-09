@@ -6,7 +6,7 @@ use RuntimeException;
 
 class UtilToken implements UtilTokenInterface
 {
-    const SEPARATOR = ':';
+    public const SEPARATOR = ':';
 
     /**
      * Algorithme de cryptage
@@ -38,8 +38,7 @@ class UtilToken implements UtilTokenInterface
         string $credential,
         string $password,
         string $salt = ''
-    ): string
-    {
+    ): string {
         $password = hash_hmac($this->algo, $credential . $password, $salt);
         $credential = base64_encode($credential);
         return $credential . self::SEPARATOR . $password;
@@ -75,8 +74,7 @@ class UtilToken implements UtilTokenInterface
         string $credential,
         string $password,
         string $salt = ''
-    ): bool
-    {
+    ): bool {
         $passwordToVerify = hash_hmac($this->algo, $credential . $password, $salt);
         list($credentialOrigin, $passwordOrigin) = $this->decodeToken($token);
         if (
