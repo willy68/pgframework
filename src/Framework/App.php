@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use Framework\Environnement\Environnement;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Framework\Middleware\Stack\MiddlewareAwareStackTrait;
@@ -160,7 +161,7 @@ class App implements RequestHandlerInterface
     {
         if ($this->container === null) {
             $builder = new ContainerBuilder();
-            $env = getenv('ENV') ?: 'production';
+            $env = Environnement::getEnv('APP_ENV', 'production');
             if ($env === 'production') {
                 $builder->enableCompilation(self::COMPILED_CONTAINER_DIRECTORY);
                 $builder->writeProxiesToFile(true, self::PROXY_DIRECTORY);

@@ -21,6 +21,7 @@ use Framework\Session\SessionInterface;
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
 use Framework\ActiveRecord\ActiveRecordFactory;
+use Framework\Environnement\Environnement;
 use Framework\Invoker\InvokerFactory;
 use Framework\Validator\Filter\StriptagsFilter;
 use Framework\Validator\Filter\TrimFilter;
@@ -48,9 +49,10 @@ use function DI\factory;
 use function DI\env;
 
 return [
-    'env' => env('ENV', 'production'),
-    'app' => env('APP', 'web'),
-    'jwt.secret' => env('JWT_SECRET', 'SecretKey'),
+    'env' => Environnement::getEnv('APP_ENV', 'dev'),
+    //'env' => env('ENV', 'production'),
+    'app' => Environnement::getEnv('APP', 'web'),
+    'jwt.secret' => Environnement::getEnv('APP_KEY', 'abcdefghijklmnop123456789'),
     'twig.extensions' => [
         get(RouterTwigExtension::class),
         get(PagerFantaExtension::class),
