@@ -4,9 +4,16 @@ namespace Framework\Environnement;
 
 class Environnement
 {
-    static public function getEnv(string $var, string $default)
+    /**
+     * return environnement variable if is set else default value or null
+     *
+     * @param string $var
+     * @param string|null $default
+     * @return string|null
+     */
+    static public function getEnv(string $var, ?string $default = null)
     {
-        if (!isset($_ENV[$var])) {
+        if (!isset($_ENV[$var]) || !isset($_SERVER[$var])) {
             return $default;
         }
         return $_ENV[$var];
