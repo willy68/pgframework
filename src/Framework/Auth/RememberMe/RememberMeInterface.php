@@ -21,7 +21,8 @@ interface RememberMeInterface
     public function onLogin(
         ResponseInterface $response,
         string $username,
-        string $password
+        string $password,
+        string $salt = ''
     ): ResponseInterface;
 
     /**

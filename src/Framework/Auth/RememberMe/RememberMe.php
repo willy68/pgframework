@@ -13,8 +13,6 @@ use Framework\Auth\Service\UtilTokenInterface;
 
 class RememberMe implements RememberMeInterface
 {
-    private $salt = 'pass_phrase';
-
     /**
      * Cookie options
      *
@@ -72,18 +70,19 @@ class RememberMe implements RememberMeInterface
     public function onLogin(
         ResponseInterface $response,
         string $credential,
-        string $password
+        string $password,
+        string $salt = ''
     ): ResponseInterface {
-        $value = $this->utilToken->getToken($credential, $password, $this->salt);
+        $value = $this->utilToken->getToken($credential, $password, $salt);
 
         $this->expirationDate = time() + $this->options['expires'];
         $cookie = SetCookie::create($this->options['name'])
             ->withValue($value)
             ->withExpires($this->expirationDate)
             ->withPath($this->options['path'])
-            ->withDomain(null)
-            ->withSecure(false)
-            ->withHttpOnly(false);
+            ->withDomain($this->options['domain'])
+            ->withSecure($this->options['secure'])
+            ->withHttpOnly($this->options['httpOnly']);
         return FigResponseCookies::set($response, $cookie);
     }
 
@@ -97,7 +96,7 @@ class RememberMe implements RememberMeInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
+            list($credential, ) = $this->utilToken->decodeToken($cookie->getValue());
             $user = $this->userRepository->getUser($this->options['field'], $credential);
             if (
                 $user && $this->utilToken->validateToken(
@@ -127,9 +126,9 @@ class RememberMe implements RememberMeInterface
                 ->withValue('')
                 ->withExpires(time() - 3600)
                 ->withPath($this->options['path'])
-                ->withDomain(null)
-                ->withSecure(false)
-                ->withHttpOnly(false);
+                ->withDomain($this->options['domain'])
+                ->withSecure($this->options['secure'])
+                ->withHttpOnly($this->options['httpOnly']);
             $response = FigResponseCookies::set($response, $cookie);
         }
         return $response;
@@ -150,9 +149,9 @@ class RememberMe implements RememberMeInterface
                 ->withValue($cookie->getValue())
                 ->withExpires($this->expirationDate)
                 ->withPath($this->options['path'])
-                ->withDomain(null)
-                ->withSecure(false)
-                ->withHttpOnly(false);
+                ->withDomain($this->options['domain'])
+                ->withSecure($this->options['secure'])
+                ->withHttpOnly($this->options['httpOnly']);
             $response = FigResponseCookies::set($response, $setCookie);
         }
         return $response;

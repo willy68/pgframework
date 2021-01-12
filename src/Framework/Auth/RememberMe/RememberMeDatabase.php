@@ -55,11 +55,13 @@ class RememberMeDatabase extends RememberMe
     public function onLogin(
         ResponseInterface $response,
         string $credential,
-        string $password
+        string $password,
+        string $salt = ''
     ): ResponseInterface {
-        $response = parent::onLogin($response, $credential, $password);
-        $expirationDate = date('Y-m-d H:i:s', $this->expirationDate);
-        $randomPassword = Security::randomString(24);
+
+        $response = parent::onLogin($response, $credential, $password, $salt);
+        $randomPassword = Security::randomString(64);
+
         //['credential', 'random_password', 'expiration_date', 'is_expired']
         $this->tokenRepository->saveToken(
             [
@@ -69,17 +71,19 @@ class RememberMeDatabase extends RememberMe
                     PASSWORD_BCRYPT,
                     ["cost" => 10]
                 ),
-                'expiration_date' => $expirationDate,
+                'expiration_date' => $this->expirationDate,
                 'is_expired' => false
             ]
         );
+
+        // Create random password cookie
         $cookie = SetCookie::create($this->options['password_cookie_name'])
             ->withValue($randomPassword)
             ->withExpires($this->expirationDate)
             ->withPath($this->options['path'])
-            ->withDomain(null)
-            ->withSecure(false)
-            ->withHttpOnly(false);
+            ->withDomain($this->options['domain'])
+            ->withSecure($this->options['secure'])
+            ->withHttpOnly($this->options['httpOnly']);
         return FigResponseCookies::set($response, $cookie);
     }
 
@@ -106,25 +110,32 @@ class RememberMeDatabase extends RememberMe
                 $request,
                 $this->options['password_cookie_name']
             );
-            if ($dbToken && $cookie->getValue()) {
-                $authenticate = true;
-                //password corrupted
-                if (!password_verify($cookie->getValue(), $dbToken->getRandomPassword())) {
-                    $authenticate = false;
-                }
-                // expiration date outdated
-                $this->expirationDate = time() + $this->options['expires'];
-                if ($dbToken->getExpirationDate() < date('Y-m-d H:i:s', $this->expirationDate)) {
-                    $authenticate = false;
-                }
-                // database token marked as expired
-                if ($dbToken->getIsExpired()) {
-                    $authenticate = false;
-                }
-                if (!$authenticate) {
-                    $this->tokenRepository->updateToken(['is_expired' => 1], $dbToken->getId());
-                    return null;
-                }
+
+            $authenticate = true;
+            if (!$dbToken || !$cookie->getValue()) {
+                $authenticate = false;
+            }
+            // database token marked as expired
+            if ($dbToken->getIsExpired()) {
+                $authenticate = false;
+            }
+            //password corrupted
+            if (!password_verify($cookie->getValue(), $dbToken->getRandomPassword())) {
+                $authenticate = false;
+            }
+            // expiration outdated
+            if ($dbToken->getExpirationDate() < time()) {
+                $authenticate = false;
+            }
+            if (!$authenticate) {
+                $this->tokenRepository->updateToken(
+                    [
+                        'is_expired' => 1,
+                        'expiration_date' => time() - 3600
+                    ],
+                    $dbToken->getId()
+                );
+                return null;
             }
         }
         return $user;
@@ -142,13 +153,30 @@ class RememberMeDatabase extends RememberMe
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
-        }
-        $response = parent::onLogout($request, $response);
-        $dbToken = $this->tokenRepository->getToken($credential);
-        // Set database token mark as expired
-        $this->tokenRepository->updateToken(['is_expired' => 1], $dbToken->getId());
+            list($credential, ) = $this->utilToken->decodeToken($cookie->getValue());
 
+            $response = parent::onLogout($request, $response);
+            $dbToken = $this->tokenRepository->getToken($credential);
+
+            // Set database token mark as expired
+            $this->tokenRepository->updateToken(
+                [
+                'is_expired' => 1,
+                'expiration_date' => time() - 3600
+            ],
+                $dbToken->getId()
+            );
+
+            // Delete cookie
+            $cookiePassword = SetCookie::create($this->options['password_cookie_name'])
+            ->withValue('')
+            ->withExpires(time() - 3600)
+            ->withPath($this->options['path'])
+            ->withDomain($this->options['domain'])
+            ->withSecure($this->options['secure'])
+            ->withHttpOnly($this->options['httpOnly']);
+            $response = FigResponseCookies::set($response, $cookiePassword);
+        }
         return $response;
     }
 
@@ -167,15 +195,34 @@ class RememberMeDatabase extends RememberMe
         // Get $credential
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            list($credential, $password) = $this->utilToken->decodeToken($cookie->getValue());
-        }
-        $dbToken = $this->tokenRepository->getToken($credential);
-        // Set database token a new expiration_date
-        $this->tokenRepository->updateToken(
-            ['expiration_date' => date('Y-m-d H:i:s', $this->expirationDate)],
-            $dbToken->getId()
-        );
+            list($credential, ) = $this->utilToken->decodeToken($cookie->getValue());
+        
+            $dbToken = $this->tokenRepository->getToken($credential);
 
+            $randomPassword = Security::randomString(64);
+            // Set database token a new expiration_date
+            $this->tokenRepository->updateToken(
+                [
+                'random_password' => password_hash(
+                    $randomPassword,
+                    PASSWORD_BCRYPT,
+                    ["cost" => 10]
+                ),
+                'expiration_date' => $this->expirationDate
+            ],
+                $dbToken->getId()
+            );
+
+            // Set new random password cookie
+            $cookie = SetCookie::create($this->options['password_cookie_name'])
+            ->withValue($randomPassword)
+            ->withExpires($this->expirationDate)
+            ->withPath($this->options['path'])
+            ->withDomain($this->options['domain'])
+            ->withSecure($this->options['secure'])
+            ->withHttpOnly($this->options['httpOnly']);
+            $response = FigResponseCookies::set($response, $cookie);
+        }
         return $response;
     }
 }
