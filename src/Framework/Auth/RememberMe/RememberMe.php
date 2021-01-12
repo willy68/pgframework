@@ -92,7 +92,7 @@ class RememberMe implements RememberMeInterface
      * @param string $secret
      * @return User|null
      */
-    public function autoLogin(ServerRequestInterface $request): ?User
+    public function autoLogin(ServerRequestInterface $request, string $salt = ''): ?User
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
@@ -103,7 +103,7 @@ class RememberMe implements RememberMeInterface
                     $cookie->getValue(),
                     $credential,
                     $user->getPassword(),
-                    $this->salt
+                    $salt
                 )
             ) {
                 return $user;

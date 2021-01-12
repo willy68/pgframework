@@ -31,4 +31,12 @@ interface TokenRepositoryInterface
      * @return TokenInterface|null
      */
     public function updateToken(array $token, $id): ?TokenInterface;
+
+    /**
+     * Detruit le token inutile
+     *
+     * @param int $id
+     * @return void
+     */
+    public function deleteToken(int $id);
 }

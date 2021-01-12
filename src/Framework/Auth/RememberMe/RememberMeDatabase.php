@@ -63,7 +63,7 @@ class RememberMeDatabase extends RememberMe
         $randomPassword = Security::randomString(64);
 
         //['credential', 'random_password', 'expiration_date', 'is_expired']
-        $this->tokenRepository->saveToken(
+        $token = $this->tokenRepository->saveToken(
             [
                 'credential' => $credential,
                 'random_password' => password_hash(
@@ -71,7 +71,7 @@ class RememberMeDatabase extends RememberMe
                     PASSWORD_BCRYPT,
                     ["cost" => 10]
                 ),
-                'expiration_date' => $this->expirationDate,
+                'expiration_date' => (new \DateTime)->setTimestamp($this->expirationDate),
                 'is_expired' => false
             ]
         );
@@ -95,9 +95,9 @@ class RememberMeDatabase extends RememberMe
      * @param string $secret
      * @return User|null
      */
-    public function autoLogin(ServerRequestInterface $request): ?User
+    public function autoLogin(ServerRequestInterface $request, string $salt = ''): ?User
     {
-        $user = parent::autoLogin($request);
+        $user = parent::autoLogin($request, $salt);
         if ($user) {
             $getUserField = 'get' . ucfirst($this->options['field']);
             if (!method_exists($user, $getUserField)) {
@@ -111,10 +111,11 @@ class RememberMeDatabase extends RememberMe
                 $this->options['password_cookie_name']
             );
 
-            $authenticate = true;
             if (!$dbToken || !$cookie->getValue()) {
-                $authenticate = false;
+                return null;
             }
+
+            $authenticate = true;
             // database token marked as expired
             if ($dbToken->getIsExpired()) {
                 $authenticate = false;
@@ -124,14 +125,14 @@ class RememberMeDatabase extends RememberMe
                 $authenticate = false;
             }
             // expiration outdated
-            if ($dbToken->getExpirationDate() < time()) {
+            if ($dbToken->getExpirationDate()->getTimestamp() < time()) {
                 $authenticate = false;
             }
             if (!$authenticate) {
                 $this->tokenRepository->updateToken(
                     [
                         'is_expired' => 1,
-                        'expiration_date' => time() - 3600
+                        'expiration_date' => (new \DateTime)->setTimestamp(time() - 3600)
                     ],
                     $dbToken->getId()
                 );
@@ -158,14 +159,8 @@ class RememberMeDatabase extends RememberMe
             $response = parent::onLogout($request, $response);
             $dbToken = $this->tokenRepository->getToken($credential);
 
-            // Set database token mark as expired
-            $this->tokenRepository->updateToken(
-                [
-                'is_expired' => 1,
-                'expiration_date' => time() - 3600
-            ],
-                $dbToken->getId()
-            );
+            // Delete token from database
+            $this->tokenRepository->deleteToken($dbToken->getId());
 
             // Delete cookie
             $cookiePassword = SetCookie::create($this->options['password_cookie_name'])
@@ -208,7 +203,7 @@ class RememberMeDatabase extends RememberMe
                     PASSWORD_BCRYPT,
                     ["cost" => 10]
                 ),
-                'expiration_date' => $this->expirationDate
+                'expiration_date' => (new \DateTime)->setTimestamp($this->expirationDate)
             ],
                 $dbToken->getId()
             );

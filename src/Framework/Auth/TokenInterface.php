@@ -28,9 +28,9 @@ interface TokenInterface
     /**
      * get the expiration date
      *
-     * @return int
+     * @return \DateTime
      */
-    public function getExpirationDate(): int;
+    public function getExpirationDate(): \DateTime;
 
     /**
      * get is_expired field as bool

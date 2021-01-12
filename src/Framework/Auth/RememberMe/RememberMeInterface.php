@@ -28,11 +28,11 @@ interface RememberMeInterface
     /**
      * Connecte l'utilisateur automatiquement avec le cookie reçu de la requète
      *
-     * @param ServerRequestInterface $request
-     * @param string $secret
-     * @return User|null
+     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @param string $salt
+     * @return \Framework\Auth\User|null
      */
-    public function autoLogin(ServerRequestInterface $request): ?User;
+    public function autoLogin(ServerRequestInterface $request, string $salt = ''): ?User;
 
     /**
      * Déconnecte l'utilisateur et invalide le cookie dans la response

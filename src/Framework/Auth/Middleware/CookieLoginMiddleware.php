@@ -4,11 +4,12 @@ namespace Framework\Auth\Middleware;
 
 use Framework\Auth;
 use Framework\Auth\ForbiddenException;
-use Framework\Auth\RememberMe\RememberMeInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use Framework\Environnement\Environnement;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Framework\Auth\RememberMe\RememberMeInterface;
 
 class CookieLoginMiddleware implements MiddlewareInterface
 {
@@ -37,7 +38,7 @@ class CookieLoginMiddleware implements MiddlewareInterface
         if ($user) {
             return $handler->handle($request);
         }
-        $user = $this->cookie->autoLogin($request);
+        $user = $this->cookie->autoLogin($request, Environnement::getEnv('APP_KEY'));
         if (!$user) {
             throw new ForbiddenException("Cookie invalid");
         }
