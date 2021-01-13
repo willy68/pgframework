@@ -63,7 +63,7 @@ class RememberMeDatabase extends RememberMe
         $randomPassword = Security::randomString(64);
 
         //['credential', 'random_password', 'expiration_date', 'is_expired']
-        $token = $this->tokenRepository->saveToken(
+        $this->tokenRepository->saveToken(
             [
                 'credential' => $credential,
                 'random_password' => password_hash(
