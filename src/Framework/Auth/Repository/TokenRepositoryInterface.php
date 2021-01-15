@@ -13,7 +13,15 @@ interface TokenRepositoryInterface
      * @param mixed $credential
      * @return \Framework\Auth\TokenInterface|null
      */
-    public function getToken($credential): ?TokenInterface;
+    public function getTokenBySeries($series): ?TokenInterface;
+
+    /**
+     * get cookie token from database or what else
+     *
+     * @param mixed $credential
+     * @return \Framework\Auth\TokenInterface|null
+     */
+    public function getTokenByCredential($credential): ?TokenInterface;
 
     /**
      * Sauvegarde le token (database, cookie, les deux ou autre)

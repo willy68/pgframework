@@ -20,9 +20,7 @@ interface RememberMeInterface
      */
     public function onLogin(
         ResponseInterface $response,
-        string $username,
-        string $password,
-        string $salt = ''
+        User $user
     ): ResponseInterface;
 
     /**
@@ -32,7 +30,7 @@ interface RememberMeInterface
      * @param string $salt
      * @return \Framework\Auth\User|null
      */
-    public function autoLogin(ServerRequestInterface $request, string $salt = ''): ?User;
+    public function autoLogin(ServerRequestInterface $request): ?User;
 
     /**
      * Déconnecte l'utilisateur et invalide le cookie dans la response

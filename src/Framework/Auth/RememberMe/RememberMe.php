@@ -4,81 +4,36 @@ namespace Framework\Auth\RememberMe;
 
 use Framework\Auth\User;
 use Dflydev\FigCookies\SetCookie;
+use Framework\Auth\ForbiddenException;
 use Psr\Http\Message\ResponseInterface;
 use Dflydev\FigCookies\FigRequestCookies;
 use Dflydev\FigCookies\FigResponseCookies;
-use Framework\Auth\Repository\UserRepositoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Framework\Auth\Service\UtilTokenInterface;
 
-class RememberMe implements RememberMeInterface
+class RememberMe extends AbstractRememberMe implements RememberMeInterface
 {
-    /**
-     * Cookie options
-     *
-     * @var array
-     */
-    protected $options = [
-        'name' => 'auth_login',
-        'field' => 'username',
-        'expires' => 3600 * 24 * 3,
-        'path' => '/',
-        'domain' => null,
-        'secure' => false,
-        'httpOnly' => false
-    ];
 
     /**
-     * User Repository
-     *
-     * @var UserRepositoryInterface
-     */
-    protected $userRepository;
-
-    /**
-     * Utilitaire de codage et décodage du token
-     *
-     * @var UtilTokenInterface
-     */
-    protected $utilToken;
-
-    /**
-     * date d'expiration du cookie variable de travail
-     *
-     * @var int
-     */
-    protected $expirationDate;
-
-    public function __construct(
-        UserRepositoryInterface $userRepository,
-        UtilTokenInterface $utilToken,
-        array $options = []
-    ) {
-        $this->userRepository = $userRepository;
-        $this->utilToken = $utilToken;
-        $this->setOptions($options);
-    }
-
-    /**
+     * Crée un cookie d'authentification
      *
      * @param ResponseInterface $response
-     * @param string $credential
-     * @param string $password
-     * @param string $secret
+     * @param User $user
      * @return ResponseInterface
      */
-    public function onLogin(
-        ResponseInterface $response,
-        string $credential,
-        string $password,
-        string $salt = ''
-    ): ResponseInterface {
-        $value = $this->utilToken->getToken($credential, $password, $salt);
+    public function onLogin(ResponseInterface $response, User $user): ResponseInterface
+    {
 
-        $this->expirationDate = time() + $this->options['expires'];
+        $cookieValue = $this->getCookieHash(
+            $user->getUsername(),
+            $user->getPassword(),
+            get_class($user),
+            time() + $this->options['lifetime'],
+            $this->salt
+        );
+
         $cookie = SetCookie::create($this->options['name'])
-            ->withValue($value)
-            ->withExpires($this->expirationDate)
+            ->withValue($cookieValue)
+            ->withExpires(time() + $this->options['lifetime'])
             ->withPath($this->options['path'])
             ->withDomain($this->options['domain'])
             ->withSecure($this->options['secure'])
@@ -87,25 +42,30 @@ class RememberMe implements RememberMeInterface
     }
 
     /**
+     * Connecte l'utilisateur automatiquement avec le cookie reçu de la requète
      *
      * @param ServerRequestInterface $request
-     * @param string $secret
      * @return User|null
      */
-    public function autoLogin(ServerRequestInterface $request, string $salt = ''): ?User
+    public function autoLogin(ServerRequestInterface $request): ?User
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
-        if ($cookie->getValue()) {
-            list($credential, ) = $this->utilToken->decodeToken($cookie->getValue());
-            $user = $this->userRepository->getUser($this->options['field'], $credential);
-            if (
-                $user && $this->utilToken->validateToken(
-                    $cookie->getValue(),
-                    $credential,
-                    $user->getPassword(),
-                    $salt
-                )
-            ) {
+        if (($cookieValue = $cookie->getValue())) {
+            $cookieParts = $this->decodeCookie($cookieValue);
+
+            if (4 !== \count($cookieParts)) {
+                throw new ForbiddenException('The cookie is invalid.');
+            }
+
+            [$username, $userClass, $expires, $hash] = $cookieParts;
+
+            if (false === $username = base64_decode($username, true)) {
+                throw new ForbiddenException('$username contains a character from outside the base64 alphabet.');
+            }
+
+            $user = $this->userRepository->getUser($this->options['field'], $username);
+
+            if (true === hash_equals(hash_hmac($this->algo, $username . $user->getPassword() . $userClass . $expires, $this->salt), $hash)) {
                 return $user;
             }
         }
@@ -113,6 +73,7 @@ class RememberMe implements RememberMeInterface
     }
 
     /**
+     * Déconnecte l'utilisateur et invalide le cookie dans la response
      *
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
@@ -135,6 +96,7 @@ class RememberMe implements RememberMeInterface
     }
 
     /**
+     * Renouvelle la date d'expiration du cookie dans la response
      *
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
@@ -144,10 +106,9 @@ class RememberMe implements RememberMeInterface
     {
         $cookie = FigRequestCookies::get($request, $this->options['name']);
         if ($cookie->getValue()) {
-            $this->expirationDate = time() + $this->options['expires'];
             $setCookie = SetCookie::create($this->options['name'])
                 ->withValue($cookie->getValue())
-                ->withExpires($this->expirationDate)
+                ->withExpires(time() + $this->options['lifetime'])
                 ->withPath($this->options['path'])
                 ->withDomain($this->options['domain'])
                 ->withSecure($this->options['secure'])
@@ -157,17 +118,17 @@ class RememberMe implements RememberMeInterface
         return $response;
     }
 
-    /**
-     * Modifie le tableau d'options du cookie
-     *
-     * @param array $options
-     * @return RememberMeInterface
-     */
-    public function setOptions(array $options = []): RememberMeInterface
-    {
-        if (!empty($options)) {
-            $this->options = array_merge($this->options, $options);
-        }
-        return $this;
+    protected function getCookieHash(
+        string $credential,
+        string $password,
+        string $userClass,
+        int $expires
+    ): string {
+        return $this->encodeCookie([
+            base64_encode($credential),
+            $userClass,
+            $expires,
+            hash_hmac($this->algo, $credential . $password . $userClass . $expires, $this->salt)
+        ]);
     }
 }

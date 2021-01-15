@@ -12,7 +12,14 @@ interface TokenInterface
     public function getId(): int;
 
     /**
-     * get the unique user credential (ex. username or email)
+     * get the unique user series
+     *
+     * @return string
+     */
+    public function getSeries(): string;
+
+    /**
+     * get user credential (ex. username or email)
      *
      * @return string
      */
@@ -31,11 +38,4 @@ interface TokenInterface
      * @return \DateTime
      */
     public function getExpirationDate(): \DateTime;
-
-    /**
-     * get is_expired field as bool
-     *
-     * @return bool
-     */
-    public function getIsExpired(): bool;
 }
