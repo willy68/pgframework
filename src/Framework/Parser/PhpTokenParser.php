@@ -1,4 +1,5 @@
 <?php
+namespace Framework\Parser;
 
 class PhpTokenParser
 {
@@ -6,7 +7,7 @@ class PhpTokenParser
     public function __construct()
     {
         if(!\function_exists('token_get_all')) {
-            throw new LogicException("Function token_get_all don't exists in this system");
+            throw new \LogicException("Function token_get_all don't exists in this system");
         }
         
     }
